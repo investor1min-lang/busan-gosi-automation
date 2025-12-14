@@ -430,7 +430,7 @@ def process_new_gosi(post_data):
     log(f"{'='*80}\n")
     
     # 폴더 생성
-    from busan_blog import ensure_dirs
+    from busan_blog_최종__1_ import ensure_dirs
     ensure_dirs()
     
     driver = None
