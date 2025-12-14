@@ -158,12 +158,19 @@ def create_html_with_images(post_data, info, pdf_images):
         
         # JavaScript 데이터 삽입
         js_data = f"""
-        document.addEventListener('DOMContentLoaded', function() {{
-            // 기본 정보 입력
-            document.getElementById('locationInput').value = '{location}';
-            document.getElementById('projectInput').value = '{project_name}';
-            document.getElementById('dateInput').value = '{date_str}';
-            document.getElementById('typeInput').value = '{gosi_type}';
+        (function() {{
+            // 즉시 실행 함수
+            function initializeCard() {{
+                // 기본 정보 입력
+                const locationInput = document.getElementById('locationInput');
+                const projectInput = document.getElementById('projectInput');
+                const dateInput = document.getElementById('dateInput');
+                const typeInput = document.getElementById('typeInput');
+                
+                if (locationInput) locationInput.value = '{location}';
+                if (projectInput) projectInput.value = '{project_name}';
+                if (dateInput) dateInput.value = '{date_str}';
+                if (typeInput) typeInput.value = '{gosi_type}';
         """
         
         # 이미지 추가 (최대 10장)
@@ -174,25 +181,40 @@ def create_html_with_images(post_data, info, pdf_images):
                     img_base64 = f"data:image/png;base64,{img_data}"
                     
                     js_data += f"""
-            // 이미지 {idx} 추가
-            const img{idx} = new Image();
-            img{idx}.src = '{img_base64}';
-            img{idx}.onload = function() {{
-                const event{idx} = new CustomEvent('imageLoaded', {{
-                    detail: {{ image: img{idx}, index: {idx-1} }}
-                }});
-                document.dispatchEvent(event{idx});
-            }};
+                // 이미지 {idx} 추가
+                const img{idx} = new Image();
+                img{idx}.onload = function() {{
+                    const event = new CustomEvent('imageLoaded', {{
+                        detail: {{ image: img{idx}, index: {idx-1} }}
+                    }});
+                    document.dispatchEvent(event);
+                }};
+                img{idx}.src = '{img_base64}';
             """
             except Exception as e:
                 log(f"  ⚠️ 이미지 {idx} 처리 실패: {e}")
         
         js_data += """
-        });
+            }}
+            
+            // DOM 로드 완료 시 실행
+            if (document.readyState === 'loading') {{
+                document.addEventListener('DOMContentLoaded', initializeCard);
+            }} else {{
+                initializeCard();
+            }}
+        }})();
         """
         
         # HTML에 스크립트 삽입
         html_content = html_content.replace('</body>', f'<script>{js_data}</script></body>')
+        
+        log(f"  ✅ JavaScript 삽입 완료 ({len(js_data)} chars)")
+        log(f"  📍 위치: {location}")
+        log(f"  📋 제목: {project_name}")
+        log(f"  📅 날짜: {date_str}")
+        log(f"  🏗️ 구분: {gosi_type}")
+        log(f"  📸 이미지: {len(pdf_images[:10])}장")
         
         # 저장
         html_dir = Path(OUT_DIR) / "gosi_html"
@@ -238,7 +260,7 @@ def capture_all_pages(html_path):
         
         # JavaScript 실행 대기
         import time
-        time.sleep(5)  # 이미지 로딩 대기
+        time.sleep(10)  # 이미지 로딩 및 JavaScript 실행 대기
         
         # 편집 패널 숨기기
         driver.execute_script("""
