@@ -363,21 +363,26 @@ def main():
     log(f"🔍 새 공고 확인 중...")
     log("="*80)
     
-    # 공고 수집
-    posts = collect_posts()
-    
-    if not posts:
-        log("📌 공고 없음")
-        return
-    
-    log(f"📌 총 {len(posts)}개 공고 발견")
-    
-    # 새 공고 필터링
-    new_posts = []
+    # 드라이버 생성
     driver = None
+    posts = []
     
     try:
         driver = make_driver(headless=True)
+        
+        # 공고 수집
+        posts = collect_posts(driver)
+        
+        if not posts:
+            log("📌 공고 없음")
+            if driver:
+                driver.quit()
+            return
+        
+        log(f"📌 총 {len(posts)}개 공고 발견")
+        
+        # 새 공고 필터링
+        new_posts = []
         
         for post_url in posts:
             detail = extract_detail(driver, post_url)
@@ -387,6 +392,8 @@ def main():
                 detail['url'] = post_url
                 detail['id'] = post_id
                 new_posts.append(detail)
+    except Exception as e:
+        log(f"❌ 공고 수집 오류: {e}")
     finally:
         if driver:
             try:
