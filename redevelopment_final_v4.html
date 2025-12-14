@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부산 재개발·재건축 고시 공고</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <style>
+        @font-face {
+            font-family: 'S-CoreDream';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff') format('woff');
+            font-weight: 300;
+        }
+        
+        @font-face {
+            font-family: 'S-CoreDream';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-6Bold.woff') format('woff');
+            font-weight: 600;
+        }
+        
+        @font-face {
+            font-family: 'S-CoreDream';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff') format('woff');
+            font-weight: 400;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'S-CoreDream', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .info-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 13px;
+        }
+        
+        .info-value input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'S-CoreDream', sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .info-value input:focus {
+            outline: none;
+            border-color: #7e22ce;
+            box-shadow: 0 0 0 3px rgba(126, 34, 206, 0.1);
+        }
+        
+        .pages-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .page-counter {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+        
+        .page-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* 다중 업로드 영역 */
+        .multi-upload-zone {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border: 3px dashed #0ea5e9;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .multi-upload-zone:hover {
+            background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
+            border-color: #0284c7;
+            transform: translateY(-2px);
+        }
+        
+        .multi-upload-zone.dragover {
+            background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
+            border-color: white;
+            color: white;
+        }
+        
+        .multi-upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .multi-upload-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #0c4a6e;
+        }
+        
+        .multi-upload-zone.dragover .multi-upload-title {
+            color: white;
+        }
+        
+        .multi-upload-desc {
+            font-size: 14px;
+            color: #075985;
+        }
+        
+        .multi-upload-zone.dragover .multi-upload-desc {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'S-CoreDream', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(126, 34, 206, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(126, 34, 206, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-remove {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        /* 크롭 모달 */
+        .crop-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .crop-modal.active {
+            display: flex;
+        }
+        
+        .crop-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+        }
+        
+        .crop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .crop-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+        
+        .crop-image-wrapper {
+            max-width: 100%;
+            max-height: 60vh;
+            margin-bottom: 20px;
+        }
+        
+        .crop-image-wrapper img {
+            max-width: 100%;
+            display: block;
+        }
+        
+        .crop-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        /* 카드 스타일 */
+        .card-wrapper {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            padding: 30px 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            animation: pulse 4s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+        
+        .card-header-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+        
+        .card-title {
+            color: white;
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+        
+        .card-body {
+            padding: 25px;
+        }
+        
+        .info-display {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 15px;
+            border: 2px solid #e2e8f0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 30px;
+        }
+        
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0;
+            border-bottom: none;
+        }
+        
+        .info-row-label {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: auto;
+        }
+        
+        .info-row-value {
+            color: #1e293b;
+            font-size: 17px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #1e3c72 0%, #7e22ce 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 0;
+        }
+        
+        .footer-source {
+            font-size: 15px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .footer-watermark {
+            font-size: 13px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        /* 페이지 아이템 */
+        .page-item {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .page-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .page-number {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            padding: 6px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .notice-image-container {
+            position: relative;
+            background: #f8fafc;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            display: none;
+            width: 100%;
+        }
+        
+        .canvas-wrapper.active {
+            display: block;
+        }
+        
+        .marking-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            z-index: 5;
+            touch-action: none;
+        }
+        
+        .notice-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            min-height: 400px;
+            object-fit: contain;
+            background: white;
+        }
+        
+        .image-upload-area {
+            width: 100%;
+            min-height: 400px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px dashed #cbd5e1;
+        }
+        
+        .image-upload-area:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            border-color: #7e22ce;
+        }
+        
+        .image-upload-area.dragover {
+            background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
+            color: white;
+            border-color: white;
+        }
+        
+        .upload-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .image-upload-area.dragover .upload-text {
+            color: white;
+        }
+        
+        .upload-subtext {
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .image-upload-area.dragover .upload-subtext {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .image-input {
+            display: none;
+        }
+        
+        /* 마킹 도구 */
+        .marking-tools {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 10;
+            gap: 8px;
+            flex-wrap: wrap;
+            max-width: calc(100% - 30px);
+        }
+        
+        .marking-tools.active {
+            display: flex;
+        }
+        
+        .tool-btn {
+            padding: 8px 14px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: 'S-CoreDream', sans-serif;
+        }
+        
+        .tool-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .tool-btn.active {
+            background: #7e22ce;
+            color: white;
+            border-color: #7e22ce;
+        }
+        
+        .color-picker {
+            width: 40px;
+            height: 35px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .tool-divider {
+            width: 2px;
+            background: #e5e7eb;
+            margin: 0 4px;
+        }
+        
+        /* 굵기 선택 드롭다운 */
+        .thickness-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .thickness-btn {
+            padding: 8px 14px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'S-CoreDream', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .thickness-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-top: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 20;
+            min-width: 120px;
+        }
+        
+        .thickness-menu.active {
+            display: block;
+        }
+        
+        .thickness-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .thickness-option:hover {
+            background: #f3f4f6;
+        }
+        
+        .thickness-option.selected {
+            background: #7e22ce;
+            color: white;
+        }
+        
+        .thickness-preview {
+            width: 30px;
+            height: 3px;
+            background: #7e22ce;
+            border-radius: 2px;
+        }
+        
+        .thickness-option[data-thickness="thin"] .thickness-preview {
+            height: 2px;
+        }
+        
+        .thickness-option[data-thickness="normal"] .thickness-preview {
+            height: 4px;
+        }
+        
+        .thickness-option[data-thickness="thick"] .thickness-preview {
+            height: 8px;
+        }
+        
+        .remove-image-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            z-index: 10;
+            border: 2px solid white;
+        }
+        
+        .remove-image-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+        
+        .page-item.has-image .remove-image-btn {
+            display: flex;
+        }
+        
+        /* 페이지 삭제 버튼 */
+        .delete-page-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            z-index: 15;
+            border: 2px solid white;
+        }
+        
+        .delete-page-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        
+        /* 첫 페이지는 삭제 버튼 숨김 */
+        #page1Wrapper .delete-page-btn {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .card-title {
+                font-size: 32px;
+            }
+            
+            .info-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .crop-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <div class="info-section">
+                <div class="info-item">
+                    <label class="info-label"> 지역</label>
+                    <div class="info-value">
+                        <input type="text" id="locationInput" placeholder="예: 부산광역시 수영구" value="부산광역시 수영구">
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label"> 사업명</label>
+                    <div class="info-value">
+                        <input type="text" id="projectInput" placeholder="예: 광안6구역 재개발사업" value="광안6구역 재개발사업">
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label"> 고시일</label>
+                    <div class="info-value">
+                        <input type="text" id="dateInput" placeholder="예: 2025년 11월 16일" value="2025년 11월 16일">
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label"> 구분</label>
+                    <div class="info-value">
+                        <input type="text" id="typeInput" placeholder="재개발/재건축" value="재개발">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 다중 이미지 업로드 영역 -->
+            <div class="multi-upload-zone" id="multiUploadZone">
+                <input type="file" id="multiImageInput" accept="image/*" multiple style="display: none;">
+                <div class="multi-upload-icon">📚</div>
+                <div class="multi-upload-title">여러 이미지를 한번에 업로드</div>
+                <div class="multi-upload-desc">클릭하거나 여러 이미지를 드래그하세요 (자동으로 페이지 추가)</div>
+            </div>
+            
+            <div class="pages-control">
+                <div class="page-counter">총 <strong id="pageCount">0</strong>개 페이지</div>
+                <div class="page-buttons">
+                    <button class="btn btn-add btn-small" onclick="addPage()">➕ 페이지 추가</button>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="saveAllPages()">💾 모든 페이지 저장</button>
+                <button class="btn btn-secondary" onclick="resetAll()">🔄 초기화</button>
+            </div>
+        </div>
+        
+        <!-- 1페이지 -->
+        <div class="card-wrapper" id="page1Wrapper">
+            <button class="delete-page-btn" onclick="deletePage(1)">✕</button>
+            <div class="card" id="page1Card">
+                <div class="card-header">
+                    <div class="card-header-content">
+                        <h1 class="card-title"> 부산 재개발·재건축 고시 공고</h1>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="info-display">
+                        <div class="info-row">
+                            <div class="info-row-label"> 지역</div>
+                            <div class="info-row-value" id="displayLocation">부산광역시 수영구</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-label"> 사업명</div>
+                            <div class="info-row-value" id="displayProject">광안6구역 재개발사업</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-label"> 고시일</div>
+                            <div class="info-row-value" id="displayDate">2025년 11월 16일</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-row-label"> 구분</div>
+                            <div class="info-row-value">
+                                <span class="highlight-box" id="displayType">재개발</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="page-item" id="page1" data-page="1">
+                        <div class="page-header">
+                            <div class="page-title">
+                                <span>📄</span>
+                                <span>고시공고문 1페이지</span>
+                            </div>
+                            <div class="page-number">1 / 1</div>
+                        </div>
+                        <div class="notice-image-container">
+                            <input type="file" class="image-input" id="imageInput1" accept="image/*">
+                            <div class="image-upload-area" onclick="document.getElementById('imageInput1').click()">
+                                <div class="upload-icon">📄</div>
+                                <div class="upload-text">1페이지 이미지 첨부</div>
+                                <div class="upload-subtext">클릭하거나 드래그하세요</div>
+                            </div>
+                            <div class="canvas-wrapper">
+                                <img class="notice-image">
+                                <canvas class="marking-canvas"></canvas>
+                            </div>
+                            <div class="marking-tools">
+                                <button class="tool-btn" onclick="showCropModal(1)">✂️ 자르기</button>
+                                <div class="tool-divider"></div>
+                                <button class="tool-btn active" onclick="setTool(1, 'select')" data-tool="select">👆 선택</button>
+                                <button class="tool-btn" onclick="setTool(1, 'pen')" data-tool="pen">✍️ 펜</button>
+                                <button class="tool-btn" onclick="setTool(1, 'highlight')" data-tool="highlight">✏️ 형광펜</button>
+                                <div class="thickness-dropdown">
+                                    <button class="thickness-btn" onclick="toggleThickness(1)">
+                                        📏 굵기 <span id="thicknessLabel1">보통</span>
+                                    </button>
+                                    <div class="thickness-menu" id="thicknessMenu1">
+                                        <div class="thickness-option" data-thickness="thin" onclick="setThickness(1, 'thin', '얇게')">
+                                            <div class="thickness-preview"></div>
+                                            <span>얇게</span>
+                                        </div>
+                                        <div class="thickness-option selected" data-thickness="normal" onclick="setThickness(1, 'normal', '보통')">
+                                            <div class="thickness-preview"></div>
+                                            <span>보통</span>
+                                        </div>
+                                        <div class="thickness-option" data-thickness="thick" onclick="setThickness(1, 'thick', '굵게')">
+                                            <div class="thickness-preview"></div>
+                                            <span>굵게</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="tool-btn" onclick="setTool(1, 'circle')" data-tool="circle">⭕ 동그라미</button>
+                                <button class="tool-btn" onclick="setTool(1, 'arrow')" data-tool="arrow">➡️ 화살표</button>
+                                <button class="tool-btn" onclick="setTool(1, 'rect')" data-tool="rect">▭ 사각형</button>
+                                <button class="tool-btn" onclick="setTool(1, 'map')" data-tool="map">🗺️ 지도</button>
+                                <div class="tool-divider"></div>
+                                <input type="color" class="color-picker" value="#ffff00" onchange="setColor(1, this.value)">
+                                <button class="tool-btn" onclick="deleteSelected(1)">🗑️ 삭제</button>
+                                <button class="tool-btn" onclick="clearMarks(1)">🗑️ 전체삭제</button>
+                            </div>
+                            <button class="remove-image-btn" onclick="removeImage(1)">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <div class="footer-source"> 출처: @Chok.sense1</div>
+                        <div class="footer-watermark">부산 재개발·재건축 신속 알림</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="additionalPages"></div>
+    </div>
+    
+    <!-- 크롭 모달 -->
+    <div class="crop-modal" id="cropModal">
+        <div class="crop-container">
+            <div class="crop-header">
+                <div class="crop-title">✂️ 이미지 자르기</div>
+            </div>
+            <div class="crop-image-wrapper">
+                <img id="cropImage">
+            </div>
+            <div class="crop-actions">
+                <button class="btn btn-primary" onclick="applyCrop()">✓ 적용</button>
+                <button class="btn btn-secondary" onclick="cancelCrop()">✕ 취소</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        let pageCount = 1;
+        const MAX_PAGES = 20;
+        const markingStates = {};
+        let currentCropPage = null;
+        let cropper = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setupPage(1);
+            updateInputListeners();
+            loadSavedData();
+            updatePageCounter();
+            setupMultiUpload();
+            
+            // 굵기 메뉴 외부 클릭 시 닫기
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.thickness-dropdown')) {
+                    document.querySelectorAll('.thickness-menu').forEach(menu => {
+                        menu.classList.remove('active');
+                    });
+                }
+            });
+        });
+        
+        // 다중 업로드 설정
+        function setupMultiUpload() {
+            const zone = document.getElementById('multiUploadZone');
+            const input = document.getElementById('multiImageInput');
+            
+            zone.addEventListener('click', () => input.click());
+            
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                handleMultipleFiles(e.dataTransfer.files);
+            });
+            
+            input.addEventListener('change', (e) => {
+                handleMultipleFiles(e.target.files);
+                input.value = ''; // 초기화
+            });
+        }
+        
+        // 다중 파일 처리
+        function handleMultipleFiles(files) {
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                alert('이미지 파일만 업로드 가능합니다.');
+                return;
+            }
+            
+            if (imageFiles.length > MAX_PAGES) {
+                alert(`최대 ${MAX_PAGES}개 이미지만 업로드 가능합니다.`);
+                imageFiles.length = MAX_PAGES;
+            }
+            
+            // 첫 페이지가 비어있으면 첫 페이지부터, 아니면 새 페이지 추가
+            let startPage = 1;
+            const firstPage = document.getElementById('page1');
+            const hasImage = firstPage && firstPage.classList.contains('has-image');
+            
+            if (hasImage) {
+                startPage = pageCount + 1;
+            }
+            
+            // 필요한 만큼 페이지 추가
+            const pagesNeeded = hasImage ? imageFiles.length : imageFiles.length - 1;
+            for (let i = 0; i < pagesNeeded; i++) {
+                if (pageCount < MAX_PAGES) {
+                    addPage();
+                }
+            }
+            
+            // 각 이미지를 페이지에 할당
+            imageFiles.forEach((file, index) => {
+                const pageNum = hasImage ? startPage + index : 1 + index;
+                
+                setTimeout(() => {
+                    const pageItem = document.getElementById(`page${pageNum}`);
+                    if (!pageItem) return;
+                    
+                    const uploadArea = pageItem.querySelector('.image-upload-area');
+                    const canvasWrapper = pageItem.querySelector('.canvas-wrapper');
+                    const img = canvasWrapper.querySelector('.notice-image');
+                    const canvas = canvasWrapper.querySelector('.marking-canvas');
+                    
+                    handleImageUpload(file, uploadArea, canvasWrapper, img, canvas, pageItem, pageNum);
+                }, index * 100); // 순차적으로 처리
+            });
+            
+            setTimeout(() => {
+                alert(`${imageFiles.length}개 이미지가 업로드되었습니다!`);
+            }, imageFiles.length * 100 + 200);
+        }
+        
+        function updateInputListeners() {
+            const inputs = {
+                locationInput: 'displayLocation',
+                projectInput: 'displayProject',
+                dateInput: 'displayDate',
+                typeInput: 'displayType'
+            };
+            
+            Object.keys(inputs).forEach(inputId => {
+                const input = document.getElementById(inputId);
+                const display = document.getElementById(inputs[inputId]);
+                
+                input.addEventListener('input', function() {
+                    const value = input.value || '[입력 필요]';
+                    display.textContent = value;
+                    
+                    for (let i = 2; i <= pageCount; i++) {
+                        const pageDisplay = document.getElementById(inputs[inputId] + i);
+                        if (pageDisplay) {
+                            pageDisplay.textContent = value;
+                        }
+                    }
+                    
+                    localStorage.setItem(inputId, input.value);
+                });
+            });
+        }
+        
+        function updateDisplayValues(pageNum) {
+            const values = {
+                displayLocation: document.getElementById('locationInput').value,
+                displayProject: document.getElementById('projectInput').value,
+                displayDate: document.getElementById('dateInput').value,
+                displayType: document.getElementById('typeInput').value
+            };
+            
+            Object.keys(values).forEach(key => {
+                const element = document.getElementById(key + pageNum);
+                if (element) {
+                    element.textContent = values[key];
+                }
+            });
+        }
+        
+        function setupPage(pageNum) {
+            const input = document.getElementById(`imageInput${pageNum}`);
+            if (!input) return;
+            
+            const uploadArea = input.nextElementSibling;
+            const canvasWrapper = uploadArea.nextElementSibling;
+            const img = canvasWrapper.querySelector('.notice-image');
+            const canvas = canvasWrapper.querySelector('.marking-canvas');
+            const pageItem = document.getElementById(`page${pageNum}`);
+            
+            markingStates[pageNum] = {
+                tool: 'select',
+                color: '#ffff00',
+                thickness: 'normal',
+                isDrawing: false,
+                isDragging: false,
+                startX: 0,
+                startY: 0,
+                drawings: [],
+                selectedIndex: -1,
+                dragOffsetX: 0,
+                dragOffsetY: 0,
+                originalImage: null,
+                penPath: []
+            };
+            
+            input.addEventListener('change', function(e) {
+                handleImageUpload(e.target.files[0], uploadArea, canvasWrapper, img, canvas, pageItem, pageNum);
+            });
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleImageUpload(e.dataTransfer.files[0], uploadArea, canvasWrapper, img, canvas, pageItem, pageNum);
+            });
+        }
+        
+        function handleImageUpload(file, uploadArea, canvasWrapper, img, canvas, pageItem, pageNum) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    markingStates[pageNum].originalImage = e.target.result;
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        uploadArea.style.display = 'none';
+                        canvasWrapper.classList.add('active');
+                        pageItem.classList.add('has-image');
+                        
+                        const rect = img.getBoundingClientRect();
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        canvas.style.width = rect.width + 'px';
+                        canvas.style.height = rect.height + 'px';
+                        
+                        const tools = pageItem.querySelector('.marking-tools');
+                        tools.classList.add('active');
+                        
+                        setupCanvas(canvas, pageNum);
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function getThicknessValue(thickness, tool) {
+            const values = {
+                'pen': { thin: 2, normal: 4, thick: 8 },
+                'highlight': { thin: 15, normal: 25, thick: 40 },
+                'default': { thin: 2, normal: 4, thick: 6 }
+            };
+            
+            const toolValues = values[tool] || values['default'];
+            return toolValues[thickness] || toolValues['normal'];
+        }
+        
+        function setupCanvas(canvas, pageNum) {
+            const ctx = canvas.getContext('2d');
+            const state = markingStates[pageNum];
+            
+            function getCanvasCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+            
+            function getClickedShape(x, y) {
+                for (let i = state.drawings.length - 1; i >= 0; i--) {
+                    const drawing = state.drawings[i];
+                    if (isPointInShape(x, y, drawing)) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+            
+            function isPointInShape(x, y, drawing) {
+                const tolerance = 15;
+                
+                if (drawing.tool === 'pen') {
+                    for (let i = 0; i < drawing.path.length - 1; i++) {
+                        const dist = distanceToLine(x, y, drawing.path[i].x, drawing.path[i].y, 
+                                                    drawing.path[i+1].x, drawing.path[i+1].y);
+                        if (dist < tolerance + 5) return true;
+                    }
+                    return false;
+                } else if (drawing.tool === 'highlight') {
+                    const dist = distanceToLine(x, y, drawing.startX, drawing.startY, drawing.endX, drawing.endY);
+                    return dist < tolerance + 10;
+                } else if (drawing.tool === 'circle') {
+                    const radius = Math.sqrt(Math.pow(drawing.endX - drawing.startX, 2) + Math.pow(drawing.endY - drawing.startY, 2));
+                    const dist = Math.sqrt(Math.pow(x - drawing.startX, 2) + Math.pow(y - drawing.startY, 2));
+                    return Math.abs(dist - radius) < tolerance;
+                } else if (drawing.tool === 'rect' || drawing.tool === 'map') {
+                    const minX = Math.min(drawing.startX, drawing.endX);
+                    const maxX = Math.max(drawing.startX, drawing.endX);
+                    const minY = Math.min(drawing.startY, drawing.endY);
+                    const maxY = Math.max(drawing.startY, drawing.endY);
+                    return x >= minX - tolerance && x <= maxX + tolerance && 
+                           y >= minY - tolerance && y <= maxY + tolerance;
+                } else if (drawing.tool === 'arrow') {
+                    const dist = distanceToLine(x, y, drawing.startX, drawing.startY, drawing.endX, drawing.endY);
+                    return dist < tolerance;
+                }
+                return false;
+            }
+            
+            function distanceToLine(px, py, x1, y1, x2, y2) {
+                const A = px - x1;
+                const B = py - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+                
+                const dot = A * C + B * D;
+                const lenSq = C * C + D * D;
+                let param = -1;
+                
+                if (lenSq != 0) param = dot / lenSq;
+                
+                let xx, yy;
+                
+                if (param < 0) {
+                    xx = x1;
+                    yy = y1;
+                } else if (param > 1) {
+                    xx = x2;
+                    yy = y2;
+                } else {
+                    xx = x1 + param * C;
+                    yy = y1 + param * D;
+                }
+                
+                const dx = px - xx;
+                const dy = py - yy;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            canvas.addEventListener('mousedown', (e) => {
+                const coords = getCanvasCoords(e);
+                const x = coords.x;
+                const y = coords.y;
+                
+                if (state.tool === 'select') {
+                    const clickedIndex = getClickedShape(x, y);
+                    if (clickedIndex !== -1) {
+                        state.selectedIndex = clickedIndex;
+                        state.isDragging = true;
+                        const drawing = state.drawings[clickedIndex];
+                        
+                        if (drawing.tool === 'pen') {
+                            state.dragOffsetX = x - drawing.path[0].x;
+                            state.dragOffsetY = y - drawing.path[0].y;
+                        } else {
+                            state.dragOffsetX = x - drawing.startX;
+                            state.dragOffsetY = y - drawing.startY;
+                        }
+                        canvas.style.cursor = 'move';
+                    } else {
+                        state.selectedIndex = -1;
+                    }
+                    redrawCanvas(canvas, pageNum);
+                } else if (state.tool === 'pen') {
+                    state.isDrawing = true;
+                    state.penPath = [{x, y}];
+                } else {
+                    state.isDrawing = true;
+                    state.startX = x;
+                    state.startY = y;
+                }
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                const coords = getCanvasCoords(e);
+                const x = coords.x;
+                const y = coords.y;
+                
+                if (state.tool === 'select' && state.isDragging && state.selectedIndex !== -1) {
+                    const drawing = state.drawings[state.selectedIndex];
+                    
+                    if (drawing.tool === 'pen') {
+                        const dx = x - state.dragOffsetX - drawing.path[0].x;
+                        const dy = y - state.dragOffsetY - drawing.path[0].y;
+                        
+                        drawing.path.forEach(point => {
+                            point.x += dx;
+                            point.y += dy;
+                        });
+                    } else {
+                        const dx = x - state.dragOffsetX - drawing.startX;
+                        const dy = y - state.dragOffsetY - drawing.startY;
+                        
+                        drawing.startX += dx;
+                        drawing.startY += dy;
+                        drawing.endX += dx;
+                        drawing.endY += dy;
+                    }
+                    
+                    redrawCanvas(canvas, pageNum);
+                } else if (state.isDrawing) {
+                    if (state.tool === 'pen') {
+                        state.penPath.push({x, y});
+                    }
+                    redrawCanvas(canvas, pageNum);
+                    if (state.tool === 'pen') {
+                        drawPenPath(ctx, state.penPath, state.color, state.thickness, true);
+                    } else {
+                        drawShape(ctx, state.tool, state.startX, state.startY, x, y, state.color, state.thickness, true);
+                    }
+                } else if (state.tool === 'select') {
+                    const hoverIndex = getClickedShape(x, y);
+                    canvas.style.cursor = hoverIndex !== -1 ? 'pointer' : 'default';
+                }
+            });
+            
+            canvas.addEventListener('mouseup', (e) => {
+                if (state.isDragging) {
+                    state.isDragging = false;
+                    canvas.style.cursor = 'default';
+                } else if (state.isDrawing) {
+                    const coords = getCanvasCoords(e);
+                    const x = coords.x;
+                    const y = coords.y;
+                    
+                    if (state.tool === 'pen' && state.penPath.length > 1) {
+                        state.drawings.push({
+                            tool: 'pen',
+                            path: [...state.penPath],
+                            color: state.color,
+                            thickness: state.thickness
+                        });
+                        state.penPath = [];
+                    } else if (state.tool !== 'pen') {
+                        state.drawings.push({
+                            tool: state.tool,
+                            startX: state.startX,
+                            startY: state.startY,
+                            endX: x,
+                            endY: y,
+                            color: state.color,
+                            thickness: state.thickness
+                        });
+                    }
+                    
+                    state.isDrawing = false;
+                    redrawCanvas(canvas, pageNum);
+                }
+            });
+            
+            canvas.addEventListener('mouseleave', () => {
+                if (state.isDrawing) {
+                    state.isDrawing = false;
+                    state.penPath = [];
+                    redrawCanvas(canvas, pageNum);
+                }
+                if (state.isDragging) {
+                    state.isDragging = false;
+                    canvas.style.cursor = 'default';
+                }
+            });
+        }
+        
+        function drawPenPath(ctx, path, color, thickness, isPreview = false) {
+            if (path.length < 2) return;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = getThicknessValue(thickness, 'pen');
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            
+            ctx.stroke();
+        }
+        
+        function drawShape(ctx, tool, x1, y1, x2, y2, color, thickness, isPreview = false, isSelected = false) {
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            
+            if (tool === 'highlight') {
+                ctx.lineWidth = getThicknessValue(thickness, 'highlight');
+            } else if (tool === 'map') {
+                ctx.lineWidth = 3;
+            } else {
+                ctx.lineWidth = getThicknessValue(thickness, 'default');
+            }
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            if (isSelected) {
+                ctx.strokeStyle = '#0080ff';
+                ctx.lineWidth += 2;
+            }
+            
+            if (tool === 'highlight') {
+                ctx.globalAlpha = 0.4;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            } else if (tool === 'circle') {
+                const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                ctx.beginPath();
+                ctx.arc(x1, y1, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (tool === 'rect') {
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+            } else if (tool === 'map') {
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                
+                ctx.globalAlpha = 0.3;
+                ctx.lineWidth = 1;
+                const gridSize = 4;
+                const width = x2 - x1;
+                const height = y2 - y1;
+                
+                for (let i = 1; i < gridSize; i++) {
+                    const gx = x1 + (width / gridSize) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(gx, y1);
+                    ctx.lineTo(gx, y2);
+                    ctx.stroke();
+                }
+                
+                for (let i = 1; i < gridSize; i++) {
+                    const gy = y1 + (height / gridSize) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, gy);
+                    ctx.lineTo(x2, gy);
+                    ctx.stroke();
+                }
+                
+                ctx.globalAlpha = 1;
+            } else if (tool === 'arrow') {
+                drawArrow(ctx, x1, y1, x2, y2);
+            }
+        }
+        
+        function drawArrow(ctx, x1, y1, x2, y2) {
+            const headlen = 15;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+        }
+        
+        function redrawCanvas(canvas, pageNum) {
+            const ctx = canvas.getContext('2d');
+            const state = markingStates[pageNum];
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            state.drawings.forEach((drawing, index) => {
+                const isSelected = (index === state.selectedIndex);
+                
+                if (drawing.tool === 'pen') {
+                    drawPenPath(ctx, drawing.path, drawing.color, drawing.thickness);
+                } else {
+                    drawShape(ctx, drawing.tool, drawing.startX, drawing.startY, drawing.endX, drawing.endY, 
+                             drawing.color, drawing.thickness, false, isSelected);
+                }
+            });
+        }
+        
+        function setTool(pageNum, tool) {
+            markingStates[pageNum].tool = tool;
+            markingStates[pageNum].selectedIndex = -1;
+            const pageItem = document.getElementById(`page${pageNum}`);
+            const buttons = pageItem.querySelectorAll('.tool-btn[data-tool]');
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-tool') === tool);
+            });
+            
+            const canvas = pageItem.querySelector('.marking-canvas');
+            redrawCanvas(canvas, pageNum);
+        }
+        
+        function setColor(pageNum, color) {
+            markingStates[pageNum].color = color;
+        }
+        
+        function toggleThickness(pageNum) {
+            event.stopPropagation();
+            const menu = document.getElementById(`thicknessMenu${pageNum}`);
+            
+            document.querySelectorAll('.thickness-menu').forEach(m => {
+                if (m !== menu) m.classList.remove('active');
+            });
+            
+            menu.classList.toggle('active');
+        }
+        
+        function setThickness(pageNum, thickness, label) {
+            event.stopPropagation();
+            markingStates[pageNum].thickness = thickness;
+            
+            document.getElementById(`thicknessLabel${pageNum}`).textContent = label;
+            
+            const menu = document.getElementById(`thicknessMenu${pageNum}`);
+            menu.querySelectorAll('.thickness-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.thickness === thickness);
+            });
+            
+            menu.classList.remove('active');
+        }
+        
+        function deleteSelected(pageNum) {
+            const state = markingStates[pageNum];
+            if (state.selectedIndex !== -1) {
+                state.drawings.splice(state.selectedIndex, 1);
+                state.selectedIndex = -1;
+                const pageItem = document.getElementById(`page${pageNum}`);
+                const canvas = pageItem.querySelector('.marking-canvas');
+                redrawCanvas(canvas, pageNum);
+            }
+        }
+        
+        function clearMarks(pageNum) {
+            markingStates[pageNum].drawings = [];
+            markingStates[pageNum].selectedIndex = -1;
+            const pageItem = document.getElementById(`page${pageNum}`);
+            const canvas = pageItem.querySelector('.marking-canvas');
+            redrawCanvas(canvas, pageNum);
+        }
+        
+        function showCropModal(pageNum) {
+            currentCropPage = pageNum;
+            const state = markingStates[pageNum];
+            
+            if (!state.originalImage) {
+                alert('이미지가 없습니다.');
+                return;
+            }
+            
+            const cropImage = document.getElementById('cropImage');
+            cropImage.src = state.originalImage;
+            
+            document.getElementById('cropModal').classList.add('active');
+            
+            if (cropper) {
+                cropper.destroy();
+            }
+            
+            cropImage.onload = function() {
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: NaN,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 0.8,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: true,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+        }
+        
+        function applyCrop() {
+            if (!cropper || !currentCropPage) return;
+            
+            const canvas = cropper.getCroppedCanvas();
+            const croppedImage = canvas.toDataURL();
+            
+            const pageItem = document.getElementById(`page${currentCropPage}`);
+            const img = pageItem.querySelector('.notice-image');
+            const markingCanvas = pageItem.querySelector('.marking-canvas');
+            
+            img.src = croppedImage;
+            img.onload = function() {
+                const rect = img.getBoundingClientRect();
+                markingCanvas.width = img.naturalWidth;
+                markingCanvas.height = img.naturalHeight;
+                markingCanvas.style.width = rect.width + 'px';
+                markingCanvas.style.height = rect.height + 'px';
+                
+                markingStates[currentCropPage].drawings = [];
+                markingStates[currentCropPage].selectedIndex = -1;
+                redrawCanvas(markingCanvas, currentCropPage);
+            };
+            
+            cancelCrop();
+        }
+        
+        function cancelCrop() {
+            document.getElementById('cropModal').classList.remove('active');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            currentCropPage = null;
+        }
+        
+        function removeImage(pageNum) {
+            const pageItem = document.getElementById(`page${pageNum}`);
+            const input = document.getElementById(`imageInput${pageNum}`);
+            const uploadArea = pageItem.querySelector('.image-upload-area');
+            const canvasWrapper = pageItem.querySelector('.canvas-wrapper');
+            const img = canvasWrapper.querySelector('.notice-image');
+            const canvas = canvasWrapper.querySelector('.marking-canvas');
+            const tools = pageItem.querySelector('.marking-tools');
+            
+            img.src = '';
+            canvasWrapper.classList.remove('active');
+            uploadArea.style.display = 'flex';
+            input.value = '';
+            pageItem.classList.remove('has-image');
+            tools.classList.remove('active');
+            
+            if (markingStates[pageNum]) {
+                markingStates[pageNum].drawings = [];
+                markingStates[pageNum].selectedIndex = -1;
+                markingStates[pageNum].originalImage = null;
+                markingStates[pageNum].penPath = [];
+            }
+        }
+        
+        // 페이지 삭제 기능
+        function deletePage(pageNum) {
+            if (pageNum === 1) {
+                alert('1페이지는 삭제할 수 없습니다.');
+                return;
+            }
+            
+            if (!confirm(`${pageNum}페이지를 삭제하시겠습니까?`)) {
+                return;
+            }
+            
+            const pageWrapper = document.getElementById(`page${pageNum}Wrapper`);
+            if (pageWrapper) {
+                pageWrapper.remove();
+                delete markingStates[pageNum];
+                
+                // 페이지 번호 재정렬
+                renumberPages();
+            }
+        }
+        
+        // 페이지 번호 재정렬
+        function renumberPages() {
+            const allWrappers = document.querySelectorAll('.card-wrapper');
+            pageCount = allWrappers.length;
+            
+            allWrappers.forEach((wrapper, index) => {
+                const newPageNum = index + 1;
+                const oldPageNum = parseInt(wrapper.id.replace('pageWrapper', '').replace('page', ''));
+                
+                if (oldPageNum !== newPageNum) {
+                    // ID 변경
+                    wrapper.id = `page${newPageNum}Wrapper`;
+                    const card = wrapper.querySelector('.card');
+                    card.id = `page${newPageNum}Card`;
+                    
+                    const pageItem = wrapper.querySelector('.page-item');
+                    pageItem.id = `page${newPageNum}`;
+                    pageItem.setAttribute('data-page', newPageNum);
+                    
+                    // 입력 요소 ID 변경
+                    const input = wrapper.querySelector('.image-input');
+                    input.id = `imageInput${newPageNum}`;
+                    
+                    // 업로드 영역 onclick 변경
+                    const uploadArea = wrapper.querySelector('.image-upload-area');
+                    uploadArea.setAttribute('onclick', `document.getElementById('imageInput${newPageNum}').click()`);
+                    
+                    // 페이지 제목 변경
+                    const pageTitle = wrapper.querySelector('.page-title span:last-child');
+                    pageTitle.textContent = `고시공고문 ${newPageNum}페이지`;
+                    
+                    // 페이지 번호 표시 변경
+                    const pageNumber = wrapper.querySelector('.page-number');
+                    pageNumber.textContent = `${newPageNum} / ${pageCount}`;
+                    
+                    // 업로드 텍스트 변경
+                    const uploadText = wrapper.querySelector('.upload-text');
+                    uploadText.textContent = `${newPageNum}페이지 이미지 첨부`;
+                    
+                    // 도구 버튼들 onclick 변경
+                    wrapper.querySelectorAll('[onclick]').forEach(btn => {
+                        const onclick = btn.getAttribute('onclick');
+                        if (onclick) {
+                            btn.setAttribute('onclick', onclick.replace(/\d+/g, newPageNum));
+                        }
+                    });
+                    
+                    // 굵기 관련 ID 변경
+                    const thicknessLabel = wrapper.querySelector('[id^="thicknessLabel"]');
+                    if (thicknessLabel) thicknessLabel.id = `thicknessLabel${newPageNum}`;
+                    
+                    const thicknessMenu = wrapper.querySelector('[id^="thicknessMenu"]');
+                    if (thicknessMenu) thicknessMenu.id = `thicknessMenu${newPageNum}`;
+                    
+                    // Display 값 ID 변경
+                    ['Location', 'Project', 'Date', 'Type'].forEach(key => {
+                        const display = wrapper.querySelector(`[id^="display${key}"]`);
+                        if (display && display.id !== `display${key}`) {
+                            display.id = `display${key}${newPageNum}`;
+                        }
+                    });
+                    
+                    // 마킹 상태 이동
+                    if (markingStates[oldPageNum]) {
+                        markingStates[newPageNum] = markingStates[oldPageNum];
+                        delete markingStates[oldPageNum];
+                    }
+                }
+            });
+            
+            updatePageCounter();
+        }
+        
+        function addPage() {
+            if (pageCount >= MAX_PAGES) {
+                alert(`최대 ${MAX_PAGES}페이지까지 추가 가능합니다.`);
+                return;
+            }
+            
+            pageCount++;
+            const pageHTML = `
+                <div class="card-wrapper" id="page${pageCount}Wrapper">
+                    <button class="delete-page-btn" onclick="deletePage(${pageCount})">✕</button>
+                    <div class="card" id="page${pageCount}Card">
+                        <div class="card-header">
+                            <div class="card-header-content">
+                                <h1 class="card-title"> 부산 재개발·재건축 고시 공고</h1>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="info-display">
+                                <div class="info-row">
+                                    <div class="info-row-label"> 지역</div>
+                                    <div class="info-row-value" id="displayLocation${pageCount}">부산광역시 수영구</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-row-label"> 사업명</div>
+                                    <div class="info-row-value" id="displayProject${pageCount}">광안6구역 재개발사업</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-row-label"> 고시일</div>
+                                    <div class="info-row-value" id="displayDate${pageCount}">2025년 11월 16일</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-row-label"> 구분</div>
+                                    <div class="info-row-value">
+                                        <span class="highlight-box" id="displayType${pageCount}">재개발</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="page-item" id="page${pageCount}" data-page="${pageCount}">
+                                <div class="page-header">
+                                    <div class="page-title">
+                                        <span>📄</span>
+                                        <span>고시공고문 ${pageCount}페이지</span>
+                                    </div>
+                                    <div class="page-number">${pageCount} / ${pageCount}</div>
+                                </div>
+                                <div class="notice-image-container">
+                                    <input type="file" class="image-input" id="imageInput${pageCount}" accept="image/*">
+                                    <div class="image-upload-area" onclick="document.getElementById('imageInput${pageCount}').click()">
+                                        <div class="upload-icon">📄</div>
+                                        <div class="upload-text">${pageCount}페이지 이미지 첨부</div>
+                                        <div class="upload-subtext">클릭하거나 드래그하세요</div>
+                                    </div>
+                                    <div class="canvas-wrapper">
+                                        <img class="notice-image">
+                                        <canvas class="marking-canvas"></canvas>
+                                    </div>
+                                    <div class="marking-tools">
+                                        <button class="tool-btn" onclick="showCropModal(${pageCount})">✂️ 자르기</button>
+                                        <div class="tool-divider"></div>
+                                        <button class="tool-btn active" onclick="setTool(${pageCount}, 'select')" data-tool="select">👆 선택</button>
+                                        <button class="tool-btn" onclick="setTool(${pageCount}, 'pen')" data-tool="pen">✍️ 펜</button>
+                                        <button class="tool-btn" onclick="setTool(${pageCount}, 'highlight')" data-tool="highlight">✏️ 형광펜</button>
+                                        <div class="thickness-dropdown">
+                                            <button class="thickness-btn" onclick="toggleThickness(${pageCount})">
+                                                📏 굵기 <span id="thicknessLabel${pageCount}">보통</span>
+                                            </button>
+                                            <div class="thickness-menu" id="thicknessMenu${pageCount}">
+                                                <div class="thickness-option" data-thickness="thin" onclick="setThickness(${pageCount}, 'thin', '얇게')">
+                                                    <div class="thickness-preview"></div>
+                                                    <span>얇게</span>
+                                                </div>
+                                                <div class="thickness-option selected" data-thickness="normal" onclick="setThickness(${pageCount}, 'normal', '보통')">
+                                                    <div class="thickness-preview"></div>
+                                                    <span>보통</span>
+                                                </div>
+                                                <div class="thickness-option" data-thickness="thick" onclick="setThickness(${pageCount}, 'thick', '굵게')">
+                                                    <div class="thickness-preview"></div>
+                                                    <span>굵게</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button class="tool-btn" onclick="setTool(${pageCount}, 'circle')" data-tool="circle">⭕ 동그라미</button>
+                                        <button class="tool-btn" onclick="setTool(${pageCount}, 'arrow')" data-tool="arrow">➡️ 화살표</button>
+                                        <button class="tool-btn" onclick="setTool(${pageCount}, 'rect')" data-tool="rect">▭ 사각형</button>
+                                        <button class="tool-btn" onclick="setTool(${pageCount}, 'map')" data-tool="map">🗺️ 지도</button>
+                                        <div class="tool-divider"></div>
+                                        <input type="color" class="color-picker" value="#ffff00" onchange="setColor(${pageCount}, this.value)">
+                                        <button class="tool-btn" onclick="deleteSelected(${pageCount})">🗑️ 삭제</button>
+                                        <button class="tool-btn" onclick="clearMarks(${pageCount})">🗑️ 전체삭제</button>
+                                    </div>
+                                    <button class="remove-image-btn" onclick="removeImage(${pageCount})">✕</button>
+                                </div>
+                            </div>
+                            
+                            <div class="footer">
+                                <div class="footer-source"> 출처: @Chok.sense1</div>
+                                <div class="footer-watermark">부산 재개발·재건축 신속 알림</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('additionalPages').insertAdjacentHTML('beforeend', pageHTML);
+            setupPage(pageCount);
+            updateDisplayValues(pageCount);
+            updatePageCounter();
+        }
+        
+        function updatePageCounter() {
+            document.getElementById('pageCount').textContent = pageCount;
+            const page1Number = document.querySelector('#page1 .page-number');
+            if (page1Number) {
+                page1Number.textContent = `1 / ${pageCount}`;
+            }
+        }
+        
+        async function saveAllPages() {
+            const controlPanel = document.querySelector('.control-panel');
+            const removeButtons = document.querySelectorAll('.remove-image-btn');
+            const uploadAreas = document.querySelectorAll('.image-upload-area');
+            const pageHeaders = document.querySelectorAll('.page-header');
+            const markingTools = document.querySelectorAll('.marking-tools');
+            const deletePageBtns = document.querySelectorAll('.delete-page-btn');
+            
+            controlPanel.style.display = 'none';
+            removeButtons.forEach(btn => btn.style.display = 'none');
+            uploadAreas.forEach(area => area.style.display = 'none');
+            pageHeaders.forEach(header => header.style.display = 'none');
+            markingTools.forEach(tool => tool.style.display = 'none');
+            deletePageBtns.forEach(btn => btn.style.display = 'none');
+            
+            try {
+                let savedCount = 0;
+                const allWrappers = document.querySelectorAll('.card-wrapper');
+                
+                for (let i = 0; i < allWrappers.length; i++) {
+                    const wrapper = allWrappers[i];
+                    const pageNum = i + 1;
+                    const card = wrapper.querySelector('.card');
+                    const pageItem = wrapper.querySelector('.page-item');
+                    
+                    if (!pageItem || !pageItem.classList.contains('has-image')) {
+                        if (pageNum === 1) {
+                            alert('1페이지에 이미지를 먼저 첨부해주세요.');
+                            break;
+                        }
+                        continue;
+                    }
+                    
+                    if (card) {
+                        await new Promise((resolve) => {
+                            setTimeout(async () => {
+                                const canvas = await html2canvas(card, {
+                                    backgroundColor: '#ffffff',
+                                    scale: 3,
+                                    useCORS: true,
+                                    allowTaint: false,
+                                    logging: false
+                                });
+                                
+                                const link = document.createElement('a');
+                                const location = document.getElementById('locationInput').value || '부산';
+                                const project = document.getElementById('projectInput').value || '재개발';
+                                const now = new Date();
+                                const dateStr = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
+                                
+                                link.download = `${location}_${project}_${pageNum}페이지_${dateStr}.png`;
+                                link.href = canvas.toDataURL('image/png', 1.0);
+                                link.click();
+                                savedCount++;
+                                
+                                resolve();
+                            }, 500 * (i + 1));
+                        });
+                    }
+                }
+                
+                if (savedCount > 0) {
+                    alert(`총 ${savedCount}개 페이지가 저장되었습니다!`);
+                }
+            } catch (error) {
+                console.error('저장 오류:', error);
+                alert('이미지 저장 중 오류가 발생했습니다.');
+            }
+            
+            controlPanel.style.display = 'block';
+            uploadAreas.forEach(area => {
+                const pageItem = area.closest('.page-item');
+                if (!pageItem || !pageItem.classList.contains('has-image')) {
+                    area.style.display = 'flex';
+                }
+            });
+            pageHeaders.forEach(header => header.style.display = 'flex');
+            markingTools.forEach(tool => {
+                const pageItem = tool.closest('.page-item');
+                if (pageItem && pageItem.classList.contains('has-image')) {
+                    tool.style.display = 'flex';
+                }
+            });
+            removeButtons.forEach(btn => {
+                const pageItem = btn.closest('.page-item');
+                if (pageItem && pageItem.classList.contains('has-image')) {
+                    btn.style.display = 'flex';
+                }
+            });
+            deletePageBtns.forEach(btn => btn.style.display = 'flex');
+            
+            // 첫 페이지 삭제 버튼만 숨김
+            const firstDeleteBtn = document.querySelector('#page1Wrapper .delete-page-btn');
+            if (firstDeleteBtn) firstDeleteBtn.style.display = 'none';
+        }
+        
+        function resetAll() {
+            if (confirm('모든 내용을 초기화하시겠습니까?')) {
+                document.getElementById('locationInput').value = '부산광역시 수영구';
+                document.getElementById('projectInput').value = '광안6구역 재개발사업';
+                document.getElementById('dateInput').value = '2025년 11월 16일';
+                document.getElementById('typeInput').value = '재개발';
+                
+                document.getElementById('displayLocation').textContent = '부산광역시 수영구';
+                document.getElementById('displayProject').textContent = '광안6구역 재개발사업';
+                document.getElementById('displayDate').textContent = '2025년 11월 16일';
+                document.getElementById('displayType').textContent = '재개발';
+                
+                const allWrappers = document.querySelectorAll('.card-wrapper');
+                allWrappers.forEach((wrapper, index) => {
+                    if (index === 0) {
+                        removeImage(1);
+                    } else {
+                        wrapper.remove();
+                    }
+                });
+                
+                pageCount = 1;
+                markingStates = {1: markingStates[1]};
+                updatePageCounter();
+                
+                localStorage.clear();
+            }
+        }
+        
+        function loadSavedData() {
+            const savedData = {
+                locationInput: localStorage.getItem('locationInput'),
+                projectInput: localStorage.getItem('projectInput'),
+                dateInput: localStorage.getItem('dateInput'),
+                typeInput: localStorage.getItem('typeInput')
+            };
+            
+            if (savedData.locationInput) {
+                document.getElementById('locationInput').value = savedData.locationInput;
+                document.getElementById('displayLocation').textContent = savedData.locationInput;
+            }
+            if (savedData.projectInput) {
+                document.getElementById('projectInput').value = savedData.projectInput;
+                document.getElementById('displayProject').textContent = savedData.projectInput;
+            }
+            if (savedData.dateInput) {
+                document.getElementById('dateInput').value = savedData.dateInput;
+                document.getElementById('displayDate').textContent = savedData.dateInput;
+            }
+            if (savedData.typeInput) {
+                document.getElementById('typeInput').value = savedData.typeInput;
+                document.getElementById('displayType').textContent = savedData.typeInput;
+            }
+        }
+    </script>
+</body>
+</html>
