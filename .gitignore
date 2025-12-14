@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# 로그 파일
+*.log
+gosi_auto.log
+gosi_scheduler.log
+
+# 다운로드 파일
+downloaded_files/
+*.pdf
+*.png
+*.jpg
+
+# 로컬 설정
+kakao_token.json
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 단, gosi_state.json은 커밋해야 함 (상태 관리용)
