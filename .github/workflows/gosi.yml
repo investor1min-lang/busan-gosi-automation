@@ -1,0 +1,56 @@
+name: 부산 고시공고 자동 알림
+
+on:
+  schedule:
+    # 2시간마다 실행 (한국시간 7시~23시 = UTC 22시~14시)
+    # UTC 기준: 22, 0, 2, 4, 6, 8, 10, 12, 14시
+    - cron: '0 22,0,2,4,6,8,10,12,14 * * *'
+  
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  check-gosi:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 저장소 체크아웃
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Python 설정
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Chrome 설치
+      uses: browser-actions/setup-chrome@latest
+      with:
+        chrome-version: stable
+    
+    - name: Tesseract OCR 설치
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tesseract-ocr tesseract-ocr-kor
+    
+    - name: 패키지 설치
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 고시공고 확인 및 알림
+      env:
+        KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+        KAKAO_ACCESS_TOKEN: ${{ secrets.KAKAO_ACCESS_TOKEN }}
+        KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+        IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+      run: |
+        python gosi_github_actions.py
+    
+    - name: 상태 파일 커밋
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add gosi_state.json
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update gosi_state.json [skip ci]"
+        git push
