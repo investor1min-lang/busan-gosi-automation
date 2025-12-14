@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-부산 고시공고 자동화 (GitHub Actions용)
-- PDF 다운로드 → 이미지 변환
-- HTML 자동 생성 + 스크린샷
+부산 고시공고 자동 알림 (GitHub Actions)
+- HTML 카드뉴스 생성
+- Selenium 스크린샷
 - 카카오톡 전송
 """
 
@@ -11,38 +11,42 @@ import sys
 import json
 import base64
 import requests
-from datetime import datetime
 from pathlib import Path
-from PIL import Image
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-import time
+from datetime import datetime
 
-# 기존 크롤러 모듈 임포트
-try:
-    from busan_blog import (
-        make_driver, collect_posts, extract_detail,
-        download_pdf, pdf_to_images, ocr_pdf,
-        analyze_text, ensure_dirs, HEADLESS_LIST, OUT_DIR
-    )
-except ImportError as e:
-    print(f"❌ 크롤러 모듈 임포트 실패: {e}")
-    sys.exit(1)
+# Selenium
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+# busan_blog 모듈의 함수들 임포트
+sys.path.append(str(Path(__file__).parent))
+from busan_blog import (
+    collect_posts,
+    make_driver,
+    extract_detail,
+    download_pdf,
+    pdf_to_images,
+    ocr_pdf,
+    analyze_text,
+    HEADLESS_LIST,
+    OUT_DIR
+)
 
 # ====== 설정 ======
 STATE_FILE = "gosi_state.json"
-HTML_TEMPLATE = "redevelopment_final_v4.html"
-KAKAO_TOKEN_FILE = "kakao_token.json"
 LOG_FILE = "gosi_auto.log"
-IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY", "")
+
+# 환경 변수에서 읽기 (GitHub Secrets)
+KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY")
+KAKAO_ACCESS_TOKEN = os.getenv("KAKAO_ACCESS_TOKEN")
+KAKAO_REFRESH_TOKEN = os.getenv("KAKAO_REFRESH_TOKEN")
+IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")
+
 
 # ====== 로그 함수 ======
 def log(message):
-    """로그 출력 및 저장"""
-    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-    log_msg = f"{timestamp} {message}"
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_msg = f"[{timestamp}] {message}"
     print(log_msg)
     
     try:
@@ -54,7 +58,6 @@ def log(message):
 
 # ====== 상태 관리 ======
 def load_state():
-    """이미 처리한 공고 목록 로드"""
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, 'r', encoding='utf-8') as f:
@@ -65,76 +68,35 @@ def load_state():
 
 
 def save_state(state):
-    """상태 저장"""
     with open(STATE_FILE, 'w', encoding='utf-8') as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 
-def is_processed(url):
-    """이미 처리된 공고인지 확인"""
-    state = load_state()
-    return url in state.get("processed", [])
-
-
-def mark_processed(url):
-    """처리 완료로 표시"""
-    state = load_state()
-    if url not in state.get("processed", []):
-        state["processed"].append(url)
-        save_state(state)
-
-
-# ====== 카카오톡 토큰 관리 ======
-def load_kakao_token():
-    """카카오 토큰 로드"""
-    if not os.path.exists(KAKAO_TOKEN_FILE):
-        log(f"❌ 카카오 토큰 파일 없음: {KAKAO_TOKEN_FILE}")
-        return None
-    
-    with open(KAKAO_TOKEN_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
+# ====== 카카오톡 토큰 갱신 ======
 def refresh_kakao_token():
     """카카오 액세스 토큰 갱신"""
-    token_data = load_kakao_token()
-    if not token_data:
-        return None
-    
-    api_key = token_data.get("rest_api_key")
-    refresh_token = token_data.get("refresh_token")
-    
-    if not api_key or not refresh_token:
+    if not KAKAO_REST_API_KEY or not KAKAO_REFRESH_TOKEN:
         log("❌ REST API 키 또는 리프레시 토큰 없음")
         return None
     
     token_url = "https://kauth.kakao.com/oauth/token"
     data = {
         "grant_type": "refresh_token",
-        "client_id": api_key,
-        "refresh_token": refresh_token
+        "client_id": KAKAO_REST_API_KEY,
+        "refresh_token": KAKAO_REFRESH_TOKEN
     }
     
     try:
-        log("🔄 토큰 만료, 갱신 시도...")
         response = requests.post(token_url, data=data)
         response.raise_for_status()
-        
         tokens = response.json()
         
-        # 기존 데이터 업데이트
-        token_data["access_token"] = tokens["access_token"]
-        token_data["expires_in"] = tokens["expires_in"]
-        
-        # 새 리프레시 토큰이 있으면 업데이트
-        if "refresh_token" in tokens:
-            token_data["refresh_token"] = tokens["refresh_token"]
-        
-        with open(KAKAO_TOKEN_FILE, 'w', encoding='utf-8') as f:
-            json.dump(token_data, f, ensure_ascii=False, indent=2)
-        
+        new_access_token = tokens["access_token"]
         log("✅ 카카오 토큰 갱신 성공")
-        return token_data["access_token"]
+        
+        # GitHub Actions에서는 환경변수 업데이트 불가
+        # 다음 실행 시 자동 갱신됨
+        return new_access_token
         
     except Exception as e:
         log(f"❌ 토큰 갱신 실패: {e}")
@@ -143,9 +105,7 @@ def refresh_kakao_token():
 
 # ====== imgbb 이미지 업로드 ======
 def upload_to_imgbb(image_path):
-    """
-    이미지를 imgbb에 업로드하고 URL 반환
-    """
+    """이미지를 imgbb에 업로드하고 URL 반환"""
     try:
         with open(image_path, 'rb') as f:
             img_data = base64.b64encode(f.read()).decode('utf-8')
@@ -158,7 +118,6 @@ def upload_to_imgbb(image_path):
         
         response = requests.post(url, data=payload, timeout=30)
         response.raise_for_status()
-        
         result = response.json()
         
         if result.get("success"):
@@ -174,282 +133,261 @@ def upload_to_imgbb(image_path):
         return None
 
 
-# ====== HTML 생성 (이미지 자동 삽입) ======
-def create_html_with_images(post_data, info, image_paths):
+# ====== HTML 생성 ======
+def create_html_with_images(post_data, info, pdf_images):
     """
-    HTML 생성 - 제목과 이미지를 자동으로 삽입
+    HTML 카드뉴스 생성 (이미지 base64 포함)
     """
-    if not os.path.exists(HTML_TEMPLATE):
-        log(f"❌ HTML 템플릿 없음: {HTML_TEMPLATE}")
+    import base64
+    
+    # HTML 템플릿 읽기
+    template_path = Path("redevelopment_final_v4.html")
+    if not template_path.exists():
+        log("❌ HTML 템플릿 없음")
         return None
     
-    with open(HTML_TEMPLATE, 'r', encoding='utf-8') as f:
-        html_template = f.read()
-    
-    # 기본 정보
-    title = post_data['title']
-    location = info.get('위치', '부산')
-    
-    # 날짜 포맷팅 - "2025년 12월 3일" 형식
-    today = datetime.now()
-    date_kr = f"{today.year}년 {today.month}월 {today.day}일"
-    date_iso = today.strftime("%Y-%m-%d")
-    
-    project_type = info.get('type', '재개발')
-    
-    # 이미지들을 base64로 변환
-    images_base64 = []
-    for img_path in image_paths[:10]:  # 최대 10장
-        try:
-            with open(img_path, 'rb') as f:
-                img_data = base64.b64encode(f.read()).decode('utf-8')
-                images_base64.append(f"data:image/png;base64,{img_data}")
-        except Exception as e:
-            log(f"⚠️ 이미지 변환 실패 {img_path}: {e}")
-    
-    if not images_base64:
-        log("❌ 변환된 이미지 없음")
+    try:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # 기본 정보 설정
+        location = info.get('위치', '부산')
+        project_name = post_data['title'][:50]
+        date_str = datetime.now().strftime("%Y년 %m월 %d일")
+        gosi_type = info.get('type', '재개발')
+        
+        # JavaScript 데이터 삽입
+        js_data = f"""
+        document.addEventListener('DOMContentLoaded', function() {{
+            // 기본 정보 입력
+            document.getElementById('locationInput').value = '{location}';
+            document.getElementById('projectInput').value = '{project_name}';
+            document.getElementById('dateInput').value = '{date_str}';
+            document.getElementById('typeInput').value = '{gosi_type}';
+        """
+        
+        # 이미지 추가 (최대 10장)
+        for idx, img_path in enumerate(pdf_images[:10], 1):
+            try:
+                with open(img_path, 'rb') as img_file:
+                    img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                    img_base64 = f"data:image/png;base64,{img_data}"
+                    
+                    js_data += f"""
+            // 이미지 {idx} 추가
+            const img{idx} = new Image();
+            img{idx}.src = '{img_base64}';
+            img{idx}.onload = function() {{
+                const event{idx} = new CustomEvent('imageLoaded', {{
+                    detail: {{ image: img{idx}, index: {idx-1} }}
+                }});
+                document.dispatchEvent(event{idx});
+            }};
+            """
+            except Exception as e:
+                log(f"  ⚠️ 이미지 {idx} 처리 실패: {e}")
+        
+        js_data += """
+        });
+        """
+        
+        # HTML에 스크립트 삽입
+        html_content = html_content.replace('</body>', f'<script>{js_data}</script></body>')
+        
+        # 저장
+        html_dir = Path(OUT_DIR) / "gosi_html"
+        html_dir.mkdir(exist_ok=True, parents=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        safe_title = "".join(c for c in project_name if c.isalnum() or c in (' ', '_'))[:30]
+        html_filename = f"{timestamp}_{safe_title}.html"
+        html_path = html_dir / html_filename
+        
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        log(f"✅ HTML 저장: {html_path}")
+        return html_path
+        
+    except Exception as e:
+        log(f"❌ HTML 생성 실패: {e}")
         return None
-    
-    # JavaScript 코드 - 기본 정보 + 이미지 자동 삽입
-    js_code = f"""
-    <script>
-    window.addEventListener('DOMContentLoaded', function() {{
-        // 기본 정보 입력
-        const locationInput = document.getElementById('locationInput');
-        if (locationInput) locationInput.value = {json.dumps(location)};
-        
-        const projectInput = document.getElementById('projectInput');
-        if (projectInput) projectInput.value = {json.dumps(title)};
-        
-        const dateInput = document.getElementById('dateInput');
-        if (dateInput) dateInput.value = {json.dumps(date_kr)};
-        
-        const typeInput = document.getElementById('typeInput');
-        if (typeInput) typeInput.value = {json.dumps(project_type)};
-        
-        // Display 영역 업데이트
-        const displayLocation = document.getElementById('displayLocation');
-        if (displayLocation) displayLocation.textContent = {json.dumps(location)};
-        
-        const displayProject = document.getElementById('displayProject');
-        if (displayProject) displayProject.textContent = {json.dumps(title)};
-        
-        const displayDate = document.getElementById('displayDate');
-        if (displayDate) displayDate.textContent = {json.dumps(date_kr)};
-        
-        const displayType = document.getElementById('displayType');
-        if (displayType) displayType.textContent = {json.dumps(project_type)};
-        
-        // 이미지 자동 삽입
-        const images = {json.dumps(images_base64)};
-        
-        images.forEach((imgData, index) => {{
-            const pageNum = index + 1;
-            const pageItem = document.querySelector(`#page${{pageNum}}`);
-            
-            if (!pageItem && pageNum > 1) {{
-                // 2페이지 이상이면 페이지 추가
-                if (typeof addPage === 'function') {{
-                    addPage();
-                }}
-            }}
-            
-            // 다시 페이지 아이템 찾기
-            const actualPageItem = document.querySelector(`#page${{pageNum}}`);
-            if (!actualPageItem) return;
-            
-            const img = actualPageItem.querySelector('.notice-image');
-            const uploadArea = actualPageItem.querySelector('.image-upload-area');
-            const canvasWrapper = actualPageItem.querySelector('.canvas-wrapper');
-            
-            if (img && uploadArea && canvasWrapper) {{
-                img.src = imgData;
-                img.onload = function() {{
-                    uploadArea.style.display = 'none';
-                    canvasWrapper.classList.add('active');
-                    actualPageItem.classList.add('has-image');
-                }};
-                
-                // markingStates 초기화
-                if (typeof markingStates !== 'undefined' && !markingStates[pageNum]) {{
-                    markingStates[pageNum] = {{
-                        originalImage: imgData,
-                        tool: 'select',
-                        color: '#ffff00',
-                        thickness: 'normal',
-                        drawings: []
-                    }};
-                }}
-            }}
-        }});
-        
-        // 페이지 카운트 업데이트
-        const pageCountEl = document.getElementById('pageCount');
-        if (pageCountEl) pageCountEl.textContent = images.length;
-        
-        // 각 페이지의 페이지 번호 업데이트
-        images.forEach((_, index) => {{
-            const pageNum = index + 1;
-            const pageNumber = document.querySelector(`#page${{pageNum}} .page-number`);
-            if (pageNumber) {{
-                pageNumber.textContent = `${{pageNum}} / ${{images.length}}`;
-            }}
-        }});
-        
-        console.log('✅ 데이터 자동 입력 완료:', images.length, '페이지');
-    }});
-    </script>
-    """
-    
-    # HTML에 JavaScript 삽입 (</body> 직전)
-    html_with_js = html_template.replace('</body>', js_code + '\n</body>')
-    
-    return html_with_js
 
 
 # ====== 스크린샷 촬영 ======
 def capture_all_pages(html_path):
     """
-    HTML의 모든 페이지를 스크린샷으로 저장
+    Selenium으로 모든 페이지 캡처
     """
-    screenshot_dir = Path(OUT_DIR) / "screenshots"
-    screenshot_dir.mkdir(exist_ok=True, parents=True)
-    
-    # Chrome 옵션
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=900,1600')
-    
-    driver = webdriver.Chrome(options=options)
-    screenshot_paths = []
-    
     try:
-        # HTML 파일 열기
-        file_url = f"file://{html_path.absolute()}"
-        driver.get(file_url)
+        from selenium.webdriver.common.by import By
         
-        # 페이지 로딩 대기
-        time.sleep(3)
+        # Chrome 옵션
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--window-size=1920,3000')
         
-        # 페이지 수 확인
+        driver = webdriver.Chrome(options=chrome_options)
+        
+        # HTML 로드
+        html_url = f'file://{html_path.absolute()}'
+        driver.get(html_url)
+        
+        # JavaScript 실행 대기
+        import time
+        time.sleep(5)  # 이미지 로딩 대기
+        
+        # 편집 패널 숨기기
+        driver.execute_script("""
+            const controlPanel = document.querySelector('.control-panel');
+            if (controlPanel) {
+                controlPanel.style.display = 'none';
+            }
+        """)
+        
+        time.sleep(1)
+        
+        # 스크린샷 저장
+        screenshot_dir = Path(OUT_DIR) / "screenshots"
+        screenshot_dir.mkdir(exist_ok=True, parents=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshots = []
+        
+        # 카드 요소들 찾기
         try:
-            page_count_el = driver.find_element(By.ID, "pageCount")
-            total_pages = int(page_count_el.text)
-        except:
-            total_pages = 1
-        
-        log(f"📸 총 {total_pages}개 페이지 캡처 중...")
-        
-        # 각 페이지 캡처
-        for page_num in range(1, total_pages + 1):
-            try:
-                card = driver.find_element(By.CSS_SELECTOR, f"#page{page_num}Wrapper .card")
+            card_wrappers = driver.find_elements(By.CSS_SELECTOR, '.card-wrapper')
+            
+            if not card_wrappers:
+                log("⚠️ 카드 요소를 찾을 수 없음, 전체 화면 캡처")
+                screenshot_path = screenshot_dir / f"{timestamp}_full.png"
+                driver.save_screenshot(str(screenshot_path))
+                screenshots.append(screenshot_path)
+            else:
+                log(f"📸 총 {len(card_wrappers)}개 페이지 캡처 중...")
                 
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                screenshot_name = f"{timestamp}_page{page_num}.png"
-                screenshot_path = screenshot_dir / screenshot_name
-                
-                card.screenshot(str(screenshot_path))
-                screenshot_paths.append(screenshot_path)
-                log(f"  ✅ 페이지 {page_num} 저장")
-                
-            except Exception as e:
-                log(f"  ⚠️ 페이지 {page_num} 캡처 실패: {e}")
+                for idx, card in enumerate(card_wrappers, 1):
+                    try:
+                        screenshot_path = screenshot_dir / f"{timestamp}_page{idx}.png"
+                        card.screenshot(str(screenshot_path))
+                        screenshots.append(screenshot_path)
+                        log(f"  ✅ 페이지 {idx} 저장")
+                    except Exception as e:
+                        log(f"  ⚠️ 페이지 {idx} 캡처 실패: {e}")
+        except Exception as e:
+            log(f"⚠️ 카드 검색 실패: {e}, 전체 화면 캡처")
+            screenshot_path = screenshot_dir / f"{timestamp}_full.png"
+            driver.save_screenshot(str(screenshot_path))
+            screenshots.append(screenshot_path)
         
-        log(f"✅ 총 {len(screenshot_paths)}개 페이지 스크린샷 완료")
-        return screenshot_paths
+        driver.quit()
+        
+        if screenshots:
+            log(f"✅ 총 {len(screenshots)}개 페이지 스크린샷 완료")
+        
+        return screenshots
         
     except Exception as e:
-        log(f"❌ 스크린샷 오류: {e}")
+        log(f"❌ 스크린샷 실패: {e}")
+        import traceback
+        traceback.print_exc()
         return []
-        
-    finally:
-        driver.quit()
 
 
 # ====== 카카오톡 전송 ======
-def send_kakao_message(post_data, info, screenshot_paths):
-    """
-    카카오톡으로 카드뉴스 전송
-    """
-    if not screenshot_paths:
-        log("❌ 전송할 이미지 없음")
+def send_kakao_message(post_data, info, image_urls):
+    """카카오톡으로 이미지 포함 메시지 전송"""
+    access_token = KAKAO_ACCESS_TOKEN
+    
+    if not access_token:
+        log("❌ 카카오 액세스 토큰 없음")
         return False
     
-    token_data = load_kakao_token()
-    if not token_data:
-        return False
-    
-    access_token = token_data.get("access_token")
-    url = post_data['url']
     title = post_data['title']
+    location = info.get('위치', '부산')
+    project_type = info.get('type', '재개발')
+    url = post_data['url']
+    date_str = datetime.now().strftime("%Y년 %m월 %d일")
     
-    # imgbb 업로드
-    log(f"📤 {len(screenshot_paths)}장 이미지 업로드 중...")
-    image_urls = []
+    log(f"🔗 공고 URL: {url}")
     
-    for idx, path in enumerate(screenshot_paths[:5], 1):  # 최대 5장
-        img_url = upload_to_imgbb(path)
-        if img_url:
-            image_urls.append(img_url)
-            log(f"  [{idx}/{min(len(screenshot_paths), 5)}] 업로드 완료")
+    if not url or not url.startswith('http'):
+        log(f"⚠️ 잘못된 URL 감지: {url}")
+        url = "https://www.busan.go.kr/news/gosiboard"
     
-    if not image_urls:
-        log("❌ 이미지 업로드 실패")
-        return False
-    
-    # 카카오톡 전송
+    # API 설정
     api_url = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
+    }
+    
+    # 메시지 1: 대표 이미지 + 기본 정보
+    if image_urls:
+        message_text = f"""🚨 새 고시공고 발견!
+
+📋 {title}
+📍 {location}
+🏗️ {project_type}
+📅 {date_str}
+
+📸 카드뉴스 1/{len(image_urls)}:
+{image_urls[0]}
+
+🔗 부산시청 원문:
+{url}
+
+💡 @Chok.sense1 부산 재개발 신속 알림"""
+    else:
+        message_text = f"""🚨 새 고시공고 발견!
+
+📋 {title}
+📍 {location}
+🏗️ {project_type}
+📅 {date_str}
+
+🔗 상세보기:
+{url}
+
+💡 @Chok.sense1 부산 재개발 신속 알림"""
+    
+    template_object = {
+        "object_type": "text",
+        "text": message_text,
+        "link": {
+            "web_url": url,
+            "mobile_web_url": url
+        }
+    }
+    
+    data = {
+        "template_object": json.dumps(template_object, ensure_ascii=False)
     }
     
     try:
-        log("📤 카카오톡 전송 중...")
-        log(f"🔗 공고 URL: {url}")
-        
-        # 메시지 1: 대표 이미지 + 기본 정보
-        main_text = f"""🏠 새 고시공고 발견!
-
-📍 {info.get('위치', '부산')}
-🏗️ {info.get('type', '재개발')}
-
-📋 {title[:100]}
-
-📸 총 {len(screenshot_paths)}페이지
-👆 이미지를 탭하면 크게 볼 수 있어요!"""
-        
-        template_object = {
-            "object_type": "feed",
-            "content": {
-                "title": "부산 재개발·재건축 고시 공고",
-                "description": main_text,
-                "image_url": image_urls[0],
-                "link": {
-                    "web_url": url,
-                    "mobile_web_url": url
-                }
-            }
-        }
-        
-        data = {
-            "template_object": json.dumps(template_object, ensure_ascii=False)
-        }
-        
+        # 메시지 전송
         response = requests.post(api_url, headers=headers, data=data)
+        
+        # 토큰 만료 시 갱신 후 재시도
+        if response.status_code == 401:
+            log("🔄 토큰 만료, 갱신 시도...")
+            access_token = refresh_kakao_token()
+            if access_token:
+                headers["Authorization"] = f"Bearer {access_token}"
+                response = requests.post(api_url, headers=headers, data=data)
+        
+        response.raise_for_status()
         result = response.json()
         
         if result.get("result_code") == 0:
             log("✅ 카카오톡 메시지 전송 성공")
             
-            # 메시지 2: 추가 이미지 (2~5장)
+            # 메시지 2: 나머지 이미지들 (2~5번째)
             if len(image_urls) > 1:
-                remaining_images = "\n\n".join([f"📸 {i+2}/{len(screenshot_paths)}:\n{img_url}" 
+                remaining_images = "\n\n".join([f"📸 {i+2}/{len(image_urls)}:\n{img_url}" 
                                                 for i, img_url in enumerate(image_urls[1:])])
                 
                 detail_msg = f"""📸 추가 카드뉴스
@@ -475,21 +413,9 @@ def send_kakao_message(post_data, info, screenshot_paths):
                 log(f"✅ 추가 이미지 {len(image_urls)-1}장 전송")
             
             return True
-        
-        elif result.get("code") == -401:
-            # 토큰 만료 시 갱신 후 재시도
-            new_token = refresh_kakao_token()
-            if new_token:
-                headers["Authorization"] = f"Bearer {new_token}"
-                response = requests.post(api_url, headers=headers, data=data)
-                result = response.json()
-                
-                if result.get("result_code") == 0:
-                    log("✅ 카카오톡 메시지 전송 성공")
-                    return True
-        
-        log(f"❌ 메시지 전송 실패: {result}")
-        return False
+        else:
+            log(f"❌ 메시지 전송 실패: {result}")
+            return False
             
     except Exception as e:
         log(f"❌ 카톡 전송 오류: {e}")
@@ -498,20 +424,19 @@ def send_kakao_message(post_data, info, screenshot_paths):
 
 # ====== 메인 처리 함수 ======
 def process_new_gosi(post_data):
-    """
-    새 고시공고 전체 처리
-    """
+    """새 고시공고 전체 처리"""
     log(f"\n{'='*80}")
     log(f"📝 처리 시작: {post_data['title'][:60]}")
     log(f"{'='*80}\n")
     
+    # 폴더 생성
+    from busan_blog import ensure_dirs
+    ensure_dirs()
+    
     driver = None
     
     try:
-        # 폴더 생성
-        ensure_dirs()
-        
-        driver = make_driver(headless=HEADLESS_LIST)
+        driver = make_driver(headless=True)  # GitHub Actions는 항상 headless
         
         url = post_data['url']
         title = post_data['title']
@@ -554,53 +479,52 @@ def process_new_gosi(post_data):
         
         # 5. HTML 생성
         log("📝 HTML 생성 중...")
-        html_content = create_html_with_images(post_data, info, pdf_images)
+        html_path = create_html_with_images(post_data, info, pdf_images)
         
-        if not html_content:
-            log("❌ HTML 생성 실패")
-            return False
-        
-        # 6. HTML 저장
-        html_dir = Path(OUT_DIR) / "gosi_html"
-        html_dir.mkdir(exist_ok=True, parents=True)
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        html_name = f"{timestamp}_{title[:50]}.html"
-        html_name = html_name.replace('/', '_').replace('\\', '_').replace(':', '_')
-        
-        html_path = html_dir / html_name
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
-        
-        log(f"✅ HTML 저장: {html_path}")
-        
-        # 7. 스크린샷 (모든 페이지)
-        log("📸 카드뉴스 캡처 중...")
-        screenshot_paths = capture_all_pages(html_path)
-        
-        if not screenshot_paths:
-            log("❌ 스크린샷 실패")
-            return False
+        # 6. 스크린샷 촬영
+        image_urls = []
+        if html_path and html_path.exists():
+            log("📸 카드뉴스 캡처 중...")
+            screenshot_paths = capture_all_pages(html_path)
+            
+            if screenshot_paths:
+                # 7. 이미지 업로드 (최대 5장)
+                log(f"📤 {len(screenshot_paths[:5])}장 이미지 업로드 중...")
+                for i, img_path in enumerate(screenshot_paths[:5], 1):
+                    img_url = upload_to_imgbb(img_path)
+                    if img_url:
+                        image_urls.append(img_url)
+                        log(f"  [{i}/{min(5, len(screenshot_paths))}] 업로드 완료")
+                    else:
+                        log(f"  [{i}/{min(5, len(screenshot_paths))}] 업로드 실패")
+        else:
+            # HTML 실패 시 PDF 이미지로 대체
+            log("⚠️ HTML 생성 실패, PDF 이미지 사용")
+            log(f"📤 {len(pdf_images[:5])}장 PDF 이미지 업로드 중...")
+            for i, img_path in enumerate(pdf_images[:5], 1):
+                img_url = upload_to_imgbb(img_path)
+                if img_url:
+                    image_urls.append(img_url)
+                    log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 완료")
+                else:
+                    log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 실패")
         
         # 8. 카카오톡 전송
         log("📤 카카오톡 전송 중...")
-        kakao_success = send_kakao_message(post_data, info, screenshot_paths)
+        kakao_success = send_kakao_message(post_data, info, image_urls)
         
         if kakao_success:
             log("✅ 전체 프로세스 완료!")
-            mark_processed(url)
             return True
         else:
-            log("⚠️ 카톡 전송 실패했지만 HTML은 생성됨")
-            mark_processed(url)
-            return True
+            log("⚠️ 카톡 전송 실패")
+            return False
         
     except Exception as e:
-        log(f"❌ 오류 발생: {e}")
+        log(f"❌ 처리 실패: {e}")
         import traceback
         traceback.print_exc()
         return False
-        
     finally:
         if driver:
             try:
@@ -609,104 +533,96 @@ def process_new_gosi(post_data):
                 pass
 
 
-# ====== 새 공고 체크 ======
-def check_new_gosi():
-    """
-    새 고시공고 확인 및 처리
-    """
-    log(f"\n{'='*80}")
-    log(f"🔍 새 공고 확인 중...")
-    log(f"{'='*80}\n")
-    
-    driver = None
-    
-    try:
-        driver = make_driver(headless=HEADLESS_LIST)
-        
-        # 공고 목록 수집
-        urls = collect_posts(driver)
-        
-        if not urls:
-            log("📭 새 공고 없음")
-            return
-        
-        log(f"📌 총 {len(urls)}개 공고 발견")
-        
-        # 미처리 공고 필터링
-        new_urls = [url for url in urls if not is_processed(url)]
-        
-        if not new_urls:
-            log(f"✅ 모든 공고 이미 처리됨")
-            return
-        
-        log(f"🆕 미처리 공고 {len(new_urls)}개 발견!")
-        
-        # 각 공고 처리
-        for idx, url in enumerate(new_urls, 1):
-            log(f"\n[{idx}/{len(new_urls)}] {url}")
-            
-            try:
-                # 상세 정보 추출
-                post_data = extract_detail(driver, url)
-                
-                log(f"제목: {post_data['title'][:80]}")
-                log(f"첨부: {len(post_data['attachments'])}개")
-                
-                if not post_data['attachments']:
-                    log("⚠️ 첨부파일 없음 - 건너뛰기")
-                    mark_processed(url)
-                    continue
-                
-                # 전체 프로세스 실행
-                success = process_new_gosi(post_data)
-                
-                if not success:
-                    log(f"❌ 처리 실패")
-                
-                # 다음 공고 처리 전 대기
-                time.sleep(2)
-                
-            except Exception as e:
-                log(f"❌ 오류: {e}")
-                continue
-        
-        log(f"\n{'='*80}")
-        log(f"✅ 전체 처리 완료")
-        log(f"{'='*80}\n")
-        
-    except Exception as e:
-        log(f"❌ 모니터링 오류: {e}")
-        import traceback
-        traceback.print_exc()
-        
-    finally:
-        if driver:
-            try:
-                driver.quit()
-            except:
-                pass
-
-
-# ====== 메인 ======
-if __name__ == "__main__":
+# ====== 메인 실행 ======
+def main():
     log("\n" + "="*80)
     log("🚀 부산 고시공고 자동화 시스템 시작 (GitHub Actions)")
     log("="*80)
     
-    # 폴더 확인
-    ensure_dirs()
+    # 환경 변수 확인
+    if not all([KAKAO_REST_API_KEY, KAKAO_ACCESS_TOKEN, KAKAO_REFRESH_TOKEN, IMGBB_API_KEY]):
+        log("❌ 환경 변수 설정 확인 필요!")
+        log(f"  KAKAO_REST_API_KEY: {'✅' if KAKAO_REST_API_KEY else '❌'}")
+        log(f"  KAKAO_ACCESS_TOKEN: {'✅' if KAKAO_ACCESS_TOKEN else '❌'}")
+        log(f"  KAKAO_REFRESH_TOKEN: {'✅' if KAKAO_REFRESH_TOKEN else '❌'}")
+        log(f"  IMGBB_API_KEY: {'✅' if IMGBB_API_KEY else '❌'}")
+        return
     
-    # 카카오 토큰 확인
-    if not os.path.exists(KAKAO_TOKEN_FILE):
-        log(f"⚠️ 카카오 토큰 없음: {KAKAO_TOKEN_FILE}")
-        sys.exit(1)
+    # 상태 파일 로드
+    state = load_state()
+    processed_ids = set(state.get("processed", []))
     
-    # HTML 템플릿 확인
-    if not os.path.exists(HTML_TEMPLATE):
-        log(f"⚠️ HTML 템플릿 없음: {HTML_TEMPLATE}")
-        sys.exit(1)
+    log("\n" + "="*80)
+    log(f"🔍 새 공고 확인 중...")
+    log("="*80)
     
-    # 새 공고 체크 실행
-    check_new_gosi()
+    # 드라이버 생성
+    driver = None
+    posts = []
     
+    try:
+        driver = make_driver(headless=True)
+        
+        # 공고 수집
+        posts = collect_posts(driver)
+        
+        if not posts:
+            log("📌 공고 없음")
+            if driver:
+                driver.quit()
+            return
+        
+        log(f"📌 총 {len(posts)}개 공고 발견")
+        
+        # 새 공고 필터링
+        new_posts = []
+        
+        for post_url in posts:
+            detail = extract_detail(driver, post_url)
+            post_id = post_url.split("dataNo=")[1].split("&")[0] if "dataNo=" in post_url else post_url
+            
+            if post_id not in processed_ids:
+                detail['url'] = post_url
+                detail['id'] = post_id
+                new_posts.append(detail)
+    except Exception as e:
+        log(f"❌ 공고 수집 오류: {e}")
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
+    
+    if not new_posts:
+        log("✅ 모든 공고 이미 처리됨")
+        return
+    
+    log(f"🆕 미처리 공고 {len(new_posts)}개 발견!")
+    
+    # 새 공고 처리
+    for idx, post_data in enumerate(new_posts, 1):
+        log(f"\n[{idx}/{len(new_posts)}] {post_data['url']}")
+        log(f"제목: {post_data['title']}")
+        log(f"첨부: {len(post_data['attachments'])}개\n")
+        
+        success = process_new_gosi(post_data)
+        
+        if success:
+            processed_ids.add(post_data['id'])
+            state["processed"] = list(processed_ids)
+            save_state(state)
+        
+        # 여러 공고 처리 시 대기
+        if idx < len(new_posts):
+            import time
+            time.sleep(2)
+    
+    log("\n" + "="*80)
+    log("✅ 전체 처리 완료")
+    log("="*80)
     log("\n✅ 프로그램 종료")
+
+
+if __name__ == "__main__":
+    main()
