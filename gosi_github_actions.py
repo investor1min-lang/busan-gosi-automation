@@ -261,6 +261,10 @@ def process_new_gosi(post_data):
     log(f"📝 처리 시작: {post_data['title'][:60]}")
     log(f"{'='*80}\n")
     
+    # 폴더 생성
+    from busan_blog_최종__1_ import ensure_dirs
+    ensure_dirs()
+    
     driver = None
     
     try:
