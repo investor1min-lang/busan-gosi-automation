@@ -35,8 +35,17 @@ START_PAGE = 1
 END_PAGE = 1
 KEYWORDS = ["재개발", "재건축"]
 
-OUT_DIR = r"C:\Users\송미승\downloaded_files"
-CSV_PATH = r"C:\Users\송미승\download_manifest.csv"
+# OS에 따라 경로 설정 (Windows/Linux 모두 지원)
+import platform
+if platform.system() == "Windows":
+    OUT_DIR = r"C:\Users\송미승\downloaded_files"
+    CSV_PATH = r"C:\Users\송미승\download_manifest.csv"
+    TESSERACT_EXE = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+else:
+    # Linux (GitHub Actions)
+    OUT_DIR = os.path.join(os.getcwd(), "downloaded_files")
+    CSV_PATH = os.path.join(os.getcwd(), "download_manifest.csv")
+    TESSERACT_EXE = "/usr/bin/tesseract"
 
 # 네이버 API (카카오에서 변경)
 NAVER_CLIENT_ID = "1i3u9jg46o"
@@ -47,8 +56,8 @@ HEADLESS_MAP = False
 PAGE_SLEEP = 0.8
 TIMEOUT = 15
 
-POPPLER_BIN = r"C:\poppler\Library\bin"
-TESSERACT_EXE = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Poppler는 더 이상 사용하지 않음 (PyMuPDF 사용)
+POPPLER_BIN = ""
 OCR_MIN_CHARS = 300
 
 # ====== 유틸 ======
