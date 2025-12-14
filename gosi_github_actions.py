@@ -20,7 +20,7 @@ from selenium.webdriver.chrome.options import Options
 
 # busan_blog 모듈의 함수들 임포트
 sys.path.append(str(Path(__file__).parent))
-from busan_blog import (
+from busan_blog_최종__1_ import (
     collect_posts,
     make_driver,
     extract_detail,
