@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 부산 고시공고 자동 알림 (GitHub Actions)
-- HTML 생성 제거
-- Selenium 제거
-- PDF 이미지 직접 전송
+- HTML 카드뉴스 생성
+- Selenium 스크린샷
+- 카카오톡 전송
 """
 
 import os
@@ -13,6 +13,10 @@ import base64
 import requests
 from pathlib import Path
 from datetime import datetime
+
+# Selenium
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 # busan_blog 모듈의 함수들 임포트
 sys.path.append(str(Path(__file__).parent))
@@ -127,6 +131,170 @@ def upload_to_imgbb(image_path):
     except Exception as e:
         log(f"  ❌ imgbb 업로드 오류: {e}")
         return None
+
+
+# ====== HTML 생성 ======
+def create_html_with_images(post_data, info, pdf_images):
+    """
+    HTML 카드뉴스 생성 (이미지 base64 포함)
+    """
+    import base64
+    
+    # HTML 템플릿 읽기
+    template_path = Path("redevelopment_final_v4.html")
+    if not template_path.exists():
+        log("❌ HTML 템플릿 없음")
+        return None
+    
+    try:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # 기본 정보 설정
+        location = info.get('위치', '부산')
+        project_name = post_data['title'][:50]
+        date_str = datetime.now().strftime("%Y년 %m월 %d일")
+        gosi_type = info.get('type', '재개발')
+        
+        # JavaScript 데이터 삽입
+        js_data = f"""
+        document.addEventListener('DOMContentLoaded', function() {{
+            // 기본 정보 입력
+            document.getElementById('locationInput').value = '{location}';
+            document.getElementById('projectInput').value = '{project_name}';
+            document.getElementById('dateInput').value = '{date_str}';
+            document.getElementById('typeInput').value = '{gosi_type}';
+        """
+        
+        # 이미지 추가 (최대 10장)
+        for idx, img_path in enumerate(pdf_images[:10], 1):
+            try:
+                with open(img_path, 'rb') as img_file:
+                    img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                    img_base64 = f"data:image/png;base64,{img_data}"
+                    
+                    js_data += f"""
+            // 이미지 {idx} 추가
+            const img{idx} = new Image();
+            img{idx}.src = '{img_base64}';
+            img{idx}.onload = function() {{
+                const event{idx} = new CustomEvent('imageLoaded', {{
+                    detail: {{ image: img{idx}, index: {idx-1} }}
+                }});
+                document.dispatchEvent(event{idx});
+            }};
+            """
+            except Exception as e:
+                log(f"  ⚠️ 이미지 {idx} 처리 실패: {e}")
+        
+        js_data += """
+        });
+        """
+        
+        # HTML에 스크립트 삽입
+        html_content = html_content.replace('</body>', f'<script>{js_data}</script></body>')
+        
+        # 저장
+        html_dir = Path(OUT_DIR) / "gosi_html"
+        html_dir.mkdir(exist_ok=True, parents=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        safe_title = "".join(c for c in project_name if c.isalnum() or c in (' ', '_'))[:30]
+        html_filename = f"{timestamp}_{safe_title}.html"
+        html_path = html_dir / html_filename
+        
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        log(f"✅ HTML 저장: {html_path}")
+        return html_path
+        
+    except Exception as e:
+        log(f"❌ HTML 생성 실패: {e}")
+        return None
+
+
+# ====== 스크린샷 촬영 ======
+def capture_all_pages(html_path):
+    """
+    Selenium으로 모든 페이지 캡처
+    """
+    try:
+        from selenium.webdriver.common.by import By
+        
+        # Chrome 옵션
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--window-size=1920,3000')
+        
+        driver = webdriver.Chrome(options=chrome_options)
+        
+        # HTML 로드
+        html_url = f'file://{html_path.absolute()}'
+        driver.get(html_url)
+        
+        # JavaScript 실행 대기
+        import time
+        time.sleep(5)  # 이미지 로딩 대기
+        
+        # 편집 패널 숨기기
+        driver.execute_script("""
+            const controlPanel = document.querySelector('.control-panel');
+            if (controlPanel) {
+                controlPanel.style.display = 'none';
+            }
+        """)
+        
+        time.sleep(1)
+        
+        # 스크린샷 저장
+        screenshot_dir = Path(OUT_DIR) / "screenshots"
+        screenshot_dir.mkdir(exist_ok=True, parents=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshots = []
+        
+        # 카드 요소들 찾기
+        try:
+            card_wrappers = driver.find_elements(By.CSS_SELECTOR, '.card-wrapper')
+            
+            if not card_wrappers:
+                log("⚠️ 카드 요소를 찾을 수 없음, 전체 화면 캡처")
+                screenshot_path = screenshot_dir / f"{timestamp}_full.png"
+                driver.save_screenshot(str(screenshot_path))
+                screenshots.append(screenshot_path)
+            else:
+                log(f"📸 총 {len(card_wrappers)}개 페이지 캡처 중...")
+                
+                for idx, card in enumerate(card_wrappers, 1):
+                    try:
+                        screenshot_path = screenshot_dir / f"{timestamp}_page{idx}.png"
+                        card.screenshot(str(screenshot_path))
+                        screenshots.append(screenshot_path)
+                        log(f"  ✅ 페이지 {idx} 저장")
+                    except Exception as e:
+                        log(f"  ⚠️ 페이지 {idx} 캡처 실패: {e}")
+        except Exception as e:
+            log(f"⚠️ 카드 검색 실패: {e}, 전체 화면 캡처")
+            screenshot_path = screenshot_dir / f"{timestamp}_full.png"
+            driver.save_screenshot(str(screenshot_path))
+            screenshots.append(screenshot_path)
+        
+        driver.quit()
+        
+        if screenshots:
+            log(f"✅ 총 {len(screenshots)}개 페이지 스크린샷 완료")
+        
+        return screenshots
+        
+    except Exception as e:
+        log(f"❌ 스크린샷 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 
 # ====== 카카오톡 전송 ======
@@ -309,18 +477,39 @@ def process_new_gosi(post_data):
         log(f"✅ 유형: {info.get('type', '기타')}")
         log(f"✅ 위치: {info.get('위치', '(미추출)')}")
         
-        # 5. 이미지 업로드 (최대 5장)
-        log(f"📤 {len(pdf_images[:5])}장 이미지 업로드 중...")
-        image_urls = []
-        for i, img_path in enumerate(pdf_images[:5], 1):
-            img_url = upload_to_imgbb(img_path)
-            if img_url:
-                image_urls.append(img_url)
-                log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 완료")
-            else:
-                log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 실패")
+        # 5. HTML 생성
+        log("📝 HTML 생성 중...")
+        html_path = create_html_with_images(post_data, info, pdf_images)
         
-        # 6. 카카오톡 전송
+        # 6. 스크린샷 촬영
+        image_urls = []
+        if html_path and html_path.exists():
+            log("📸 카드뉴스 캡처 중...")
+            screenshot_paths = capture_all_pages(html_path)
+            
+            if screenshot_paths:
+                # 7. 이미지 업로드 (최대 5장)
+                log(f"📤 {len(screenshot_paths[:5])}장 이미지 업로드 중...")
+                for i, img_path in enumerate(screenshot_paths[:5], 1):
+                    img_url = upload_to_imgbb(img_path)
+                    if img_url:
+                        image_urls.append(img_url)
+                        log(f"  [{i}/{min(5, len(screenshot_paths))}] 업로드 완료")
+                    else:
+                        log(f"  [{i}/{min(5, len(screenshot_paths))}] 업로드 실패")
+        else:
+            # HTML 실패 시 PDF 이미지로 대체
+            log("⚠️ HTML 생성 실패, PDF 이미지 사용")
+            log(f"📤 {len(pdf_images[:5])}장 PDF 이미지 업로드 중...")
+            for i, img_path in enumerate(pdf_images[:5], 1):
+                img_url = upload_to_imgbb(img_path)
+                if img_url:
+                    image_urls.append(img_url)
+                    log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 완료")
+                else:
+                    log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 실패")
+        
+        # 8. 카카오톡 전송
         log("📤 카카오톡 전송 중...")
         kakao_success = send_kakao_message(post_data, info, image_urls)
         
