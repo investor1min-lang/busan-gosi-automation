@@ -51,7 +51,16 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git pull --rebase origin main
-        git add gosi_state.json
-        git diff --quiet && git diff --staged --quiet || git commit -m "Update gosi_state.json [skip ci]"
-        git push
+        
+        # 변경사항이 있는지 확인
+        if git diff --quiet gosi_state.json; then
+          echo "변경사항 없음"
+        else
+          # 변경사항 있으면 커밋 및 푸시
+          git add gosi_state.json
+          git commit -m "Update gosi_state.json [skip ci]"
+          
+          # 원격 저장소와 동기화 후 푸시
+          git pull --rebase origin main || true
+          git push
+        fi
