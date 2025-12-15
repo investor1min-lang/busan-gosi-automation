@@ -161,38 +161,76 @@ def create_html_with_images(post_data, info, pdf_images):
         (function() {{
             // 즉시 실행 함수
             function initializeCard() {{
-                // 기본 정보 입력
+                console.log('🚀 카드 초기화 시작');
+                
+                // 1. 기본 정보 입력
                 const locationInput = document.getElementById('locationInput');
                 const projectInput = document.getElementById('projectInput');
                 const dateInput = document.getElementById('dateInput');
                 const typeInput = document.getElementById('typeInput');
                 
-                if (locationInput) locationInput.value = '{location}';
-                if (projectInput) projectInput.value = '{project_name}';
-                if (dateInput) dateInput.value = '{date_str}';
-                if (typeInput) typeInput.value = '{gosi_type}';
+                if (locationInput) {{
+                    locationInput.value = '{location}';
+                    console.log('✅ 위치:', '{location}');
+                }}
+                if (projectInput) {{
+                    projectInput.value = '{project_name}';
+                    console.log('✅ 제목:', '{project_name}');
+                }}
+                if (dateInput) {{
+                    dateInput.value = '{date_str}';
+                    console.log('✅ 날짜:', '{date_str}');
+                }}
+                if (typeInput) {{
+                    typeInput.value = '{gosi_type}';
+                    console.log('✅ 구분:', '{gosi_type}');
+                }}
+                
+                // 2. Display 영역 업데이트
+                const displayLocation = document.getElementById('displayLocation1');
+                const displayProject = document.getElementById('displayProject1');
+                const displayDate = document.getElementById('displayDate1');
+                const displayType = document.getElementById('displayType1');
+                
+                if (displayLocation) displayLocation.textContent = '{location}';
+                if (displayProject) displayProject.textContent = '{project_name}';
+                if (displayDate) displayDate.textContent = '{date_str}';
+                if (displayType) displayType.textContent = '{gosi_type}';
+                
+                console.log('✅ Display 영역 업데이트 완료');
         """
         
-        # 이미지 추가 (최대 10장)
-        for idx, img_path in enumerate(pdf_images[:10], 1):
+        # 이미지 추가 (첫 번째 이미지만)
+        if pdf_images:
             try:
-                with open(img_path, 'rb') as img_file:
+                with open(pdf_images[0], 'rb') as img_file:
                     img_data = base64.b64encode(img_file.read()).decode('utf-8')
                     img_base64 = f"data:image/png;base64,{img_data}"
                     
                     js_data += f"""
-                // 이미지 {idx} 추가
-                const img{idx} = new Image();
-                img{idx}.onload = function() {{
-                    const event = new CustomEvent('imageLoaded', {{
-                        detail: {{ image: img{idx}, index: {idx-1} }}
-                    }});
-                    document.dispatchEvent(event);
-                }};
-                img{idx}.src = '{img_base64}';
+                
+                // 3. 이미지 직접 삽입
+                const noticeImage = document.querySelector('#page1 .notice-image');
+                const uploadArea = document.querySelector('#page1 .image-upload-area');
+                const canvasWrapper = document.querySelector('#page1 .image-canvas-wrapper');
+                const pageItem = document.getElementById('page1');
+                
+                if (noticeImage) {{
+                    noticeImage.src = '{img_base64}';
+                    noticeImage.style.display = 'block';
+                    console.log('✅ 이미지 설정 완료');
+                    
+                    // 이미지 로드 후 처리
+                    noticeImage.onload = function() {{
+                        console.log('✅ 이미지 로드 완료');
+                        if (uploadArea) uploadArea.style.display = 'none';
+                        if (canvasWrapper) canvasWrapper.style.display = 'block';
+                        if (pageItem) pageItem.classList.add('has-image');
+                    }};
+                }}
             """
             except Exception as e:
-                log(f"  ⚠️ 이미지 {idx} 처리 실패: {e}")
+                log(f"  ⚠️ 이미지 처리 실패: {e}")
         
         js_data += """
             }}
@@ -201,7 +239,8 @@ def create_html_with_images(post_data, info, pdf_images):
             if (document.readyState === 'loading') {{
                 document.addEventListener('DOMContentLoaded', initializeCard);
             }} else {{
-                initializeCard();
+                // 페이지가 이미 로드된 경우 즉시 실행
+                setTimeout(initializeCard, 100);
             }}
         }})();
         """
