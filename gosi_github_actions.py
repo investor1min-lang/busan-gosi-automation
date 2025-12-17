@@ -258,12 +258,16 @@ def process_new_gosi(post_data):
     log(f"{'='*80}\n")
     
     # 폴더 생성
-    ensure_dirs()
+    try:
+        ensure_dirs()
+    except Exception as e:
+        log(f"⚠️ 폴더 생성 실패: {e}")
     
     driver = None
     
     try:
         driver = make_driver(headless=True)
+        log("✅ Chrome 드라이버 생성 완료")
         
         url = post_data['url']
         title = post_data['title']
@@ -277,53 +281,80 @@ def process_new_gosi(post_data):
         
         # 1. PDF 다운로드
         log("📥 PDF 다운로드 중...")
-        pdfs = download_pdf(driver, files, url, title)
-        if not pdfs:
-            log("❌ 다운로드 실패")
+        try:
+            pdfs = download_pdf(driver, files, url, title)
+            if not pdfs:
+                log("❌ 다운로드 실패")
+                return False
+            
+            pdf_path = pdfs[0]
+            log(f"✅ 다운로드 완료: {Path(pdf_path).name}")
+        except Exception as e:
+            log(f"❌ PDF 다운로드 오류: {e}")
             return False
-        
-        pdf_path = pdfs[0]
-        log(f"✅ 다운로드 완료: {Path(pdf_path).name}")
         
         # 2. PDF → 이미지
         log("📄 PDF → 이미지 변환 중...")
-        pdf_images = pdf_to_images(pdf_path, title)
-        log(f"✅ {len(pdf_images)}장 변환 완료")
-        
-        if not pdf_images:
-            log("❌ 이미지 변환 실패")
+        try:
+            pdf_images = pdf_to_images(pdf_path, title)
+            log(f"✅ {len(pdf_images)}장 변환 완료")
+            
+            if not pdf_images:
+                log("❌ 이미지 변환 실패")
+                return False
+        except Exception as e:
+            log(f"❌ 이미지 변환 오류: {e}")
             return False
         
         # 3. OCR (텍스트 분석용)
         log("🔍 OCR 처리 중...")
-        text, meta = ocr_pdf(pdf_path)
+        try:
+            text, meta = ocr_pdf(pdf_path)
+        except Exception as e:
+            log(f"⚠️ OCR 실패 (계속 진행): {e}")
+            text = ""
         
         # 4. 텍스트 분석
         log("📊 데이터 분석 중...")
-        info = analyze_text(text, title)
-        log(f"✅ 유형: {info.get('type', '기타')}")
-        log(f"✅ 위치: {info.get('위치', '(미추출)')}")
+        try:
+            info = analyze_text(text, title)
+            log(f"✅ 유형: {info.get('type', '기타')}")
+            log(f"✅ 위치: {info.get('위치', '(미추출)')}")
+        except Exception as e:
+            log(f"⚠️ 데이터 분석 실패 (기본값 사용): {e}")
+            info = {{"type": "재개발" if "재개발" in title else "재건축", "위치": "부산"}}
         
         # 5. 이미지 업로드 (최대 5장)
-        log(f"📤 {len(pdf_images[:5])}장 이미지 업로드 중...")
+        log(f"📤 {{len(pdf_images[:5])}}장 이미지 업로드 중...")
         image_urls = []
         for i, img_path in enumerate(pdf_images[:5], 1):
-            img_url = upload_to_imgbb(img_path)
-            if img_url:
-                image_urls.append(img_url)
-                log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 완료")
-            else:
-                log(f"  [{i}/{min(5, len(pdf_images))}] 업로드 실패")
+            try:
+                img_url = upload_to_imgbb(img_path)
+                if img_url:
+                    image_urls.append(img_url)
+                    log(f"  [{{i}}/{{min(5, len(pdf_images))}}] 업로드 완료")
+                else:
+                    log(f"  [{{i}}/{{min(5, len(pdf_images))}}] 업로드 실패")
+            except Exception as e:
+                log(f"  [{{i}}/{{min(5, len(pdf_images))}}] 업로드 오류: {{e}}")
+        
+        if not image_urls:
+            log("❌ 모든 이미지 업로드 실패")
+            return False
         
         # 6. 카카오톡 전송
         log("📤 카카오톡 전송 중...")
-        kakao_success = send_kakao_message(post_data, info, image_urls)
-        
-        if kakao_success:
-            log("✅ 전체 프로세스 완료!")
-            return True
-        else:
-            log("⚠️ 카톡 전송 실패")
+        try:
+            kakao_success = send_kakao_message(post_data, info, image_urls)
+            
+            if kakao_success:
+                log("✅ 전체 프로세스 완료!")
+                return True
+            else:
+                log("⚠️ 카톡 전송 실패")
+                return False
+        except Exception as e:
+            log(f"❌ 카톡 전송 오류: {e}")
             return False
         
     except Exception as e:
@@ -335,8 +366,9 @@ def process_new_gosi(post_data):
         if driver:
             try:
                 driver.quit()
-            except:
-                pass
+                log("✅ Chrome 드라이버 종료")
+            except Exception as e:
+                log(f"⚠️ 드라이버 종료 오류: {e}")
 
 
 # ====== 메인 실행 ======
@@ -408,21 +440,34 @@ def main():
     
     # 새 공고 처리
     for idx, post_data in enumerate(new_posts, 1):
-        log(f"\n[{idx}/{len(new_posts)}] {post_data['url']}")
-        log(f"제목: {post_data['title']}")
-        log(f"첨부: {len(post_data['attachments'])}개\n")
-        
-        success = process_new_gosi(post_data)
-        
-        if success:
-            processed_ids.add(post_data['id'])
-            state["processed"] = list(processed_ids)
-            save_state(state)
-        
-        # 여러 공고 처리 시 대기
-        if idx < len(new_posts):
-            import time
-            time.sleep(2)
+        try:
+            log(f"\n[{idx}/{len(new_posts)}] {post_data['url']}")
+            log(f"제목: {post_data['title']}")
+            log(f"첨부: {len(post_data['attachments'])}개\n")
+            
+            success = process_new_gosi(post_data)
+            
+            # 성공한 경우에만 상태 저장
+            if success:
+                processed_ids.add(post_data['id'])
+                state["processed"] = list(processed_ids)
+                save_state(state)
+                log(f"✅ [{idx}/{len(new_posts)}] 처리 완료 및 상태 저장")
+            else:
+                log(f"⚠️ [{idx}/{len(new_posts)}] 처리 실패, 상태 저장 안 함")
+            
+            # 여러 공고 처리 시 대기 (API 제한 방지)
+            if idx < len(new_posts):
+                import time
+                log(f"⏳ 다음 공고 대기 중... (3초)")
+                time.sleep(3)
+                
+        except Exception as e:
+            log(f"❌ [{idx}/{len(new_posts)}] 공고 처리 중 예외 발생: {e}")
+            import traceback
+            traceback.print_exc()
+            log(f"⏭️ 다음 공고로 계속...")
+            continue
     
     log("\n" + "="*80)
     log("✅ 전체 처리 완료")
