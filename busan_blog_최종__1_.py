@@ -379,23 +379,50 @@ def download_pdf(driver, files, referer, title):
     for c in driver.get_cookies():
         cookies.set(c["name"], c["value"], domain=c.get("domain"), path=c.get("path", "/"))
     
+    # SSL 우회 설정
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
     for idx, f in enumerate(files, 1):
-        try:
-            resp = requests.get(f["url"], cookies=cookies, headers={"Referer": referer}, timeout=30, stream=True)
-            resp.raise_for_status()
-            
-            prefix = datetime.now().strftime("%Y%m%d")
-            filename = f"{prefix}_{clean_filename(title)[:50]}_{idx}.pdf"
-            path = os.path.join(OUT_DIR, filename)
-            
-            with open(path, "wb") as fp:
-                for chunk in resp.iter_content(8192):
-                    fp.write(chunk)
-            
-            saved.append(path)
-            print(f"    ✅ {Path(path).name}")
-        except Exception as e:
-            print(f"    ✗ 다운로드 실패: {e}")
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                headers = {
+                    "Referer": referer,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                
+                resp = requests.get(
+                    f["url"], 
+                    cookies=cookies, 
+                    headers=headers,
+                    timeout=60,  # 타임아웃 증가
+                    stream=True,
+                    verify=False  # SSL 검증 우회
+                )
+                resp.raise_for_status()
+                
+                prefix = datetime.now().strftime("%Y%m%d")
+                filename = f"{prefix}_{clean_filename(title)[:50]}_{idx}.pdf"
+                path = os.path.join(OUT_DIR, filename)
+                
+                with open(path, "wb") as fp:
+                    for chunk in resp.iter_content(8192):
+                        fp.write(chunk)
+                
+                saved.append(path)
+                print(f"    ✅ {Path(path).name}")
+                break  # 성공 시 루프 탈출
+                
+            except Exception as e:
+                retry_count += 1
+                if retry_count < max_retries:
+                    print(f"    ⚠️ 재시도 {retry_count}/{max_retries}...")
+                    time.sleep(2)  # 2초 대기 후 재시도
+                else:
+                    print(f"    ✗ 다운로드 실패 ({max_retries}회 시도): {e}")
     
     return saved
 
