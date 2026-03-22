@@ -1,66 +1,47 @@
-name: 부산 고시공고 자동 알림
+name: 부산 고시공고 수집 → DB 자동 갱신
 
 on:
   schedule:
-    # 2시간마다 실행 (한국시간 7시~23시 = UTC 22시~14시)
-    # UTC 기준: 22, 0, 2, 4, 6, 8, 10, 12, 14시
-    - cron: '0 22,0,2,4,6,8,10,12,14 * * *'
-  
-  workflow_dispatch:  # 수동 실행 가능
+    # 한국시간 기준 오전 9시, 오후 3시, 오후 9시 (UTC 0, 6, 12시)
+    - cron: '0 0,6,12 * * *'
+  workflow_dispatch:  # 수동 실행
 
 jobs:
-  check-gosi:
+  collect-and-update:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: 저장소 체크아웃
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Python 설정
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Chrome 설치
       uses: browser-actions/setup-chrome@latest
       with:
         chrome-version: stable
-    
-    - name: Tesseract OCR 설치
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y tesseract-ocr tesseract-ocr-kor
-    
+
     - name: 패키지 설치
       run: |
         pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: 고시공고 확인 및 알림
+        pip install selenium webdriver-manager requests supabase PyMuPDF opencv-python-headless shapely numpy
+
+    - name: 고시문 수집 → 단계 갱신 → 폴리곤 추출
       env:
-        KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-        KAKAO_ACCESS_TOKEN: ${{ secrets.KAKAO_ACCESS_TOKEN }}
-        KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
-        IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
       run: |
-        python gosi_github_actions.py
-    
-    - name: 상태 파일 커밋
+        python gosi_to_stage.py --pages 3
+
+    - name: 상태 파일 커밋 (중복 방지)
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
-        # 변경사항이 있는지 확인
-        if git diff --quiet gosi_state.json; then
-          echo "변경사항 없음"
-        else
-          # 변경사항 있으면 커밋 및 푸시
-          git add gosi_state.json
-          git commit -m "Update gosi_state.json [skip ci]"
-          
-          # 원격 저장소와 동기화 후 푸시
-          git pull --rebase origin main || true
-          git push
-        fi
+        git add gosi_stage_state.json || true
+        git diff --staged --quiet || git commit -m "chore: update gosi state [skip ci]"
+        git push
